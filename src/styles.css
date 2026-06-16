@@ -133,12 +133,60 @@
 }
 
 @layer base {
-  * {
-    border-color: var(--color-border);
-  }
-
+  * { border-color: var(--color-border); }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 }
+
+.font-display { font-family: "Playfair Display", serif; }
+.font-body { font-family: "Inter", sans-serif; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+@keyframes glam-float1 { 0%,100%{transform:rotate(-8deg) translateX(-90px) translateY(40px)} 50%{transform:rotate(-8deg) translateX(-90px) translateY(28px)} }
+@keyframes glam-float2 { 0%,100%{transform:rotate(0deg) translateY(-20px)} 50%{transform:rotate(0deg) translateY(-32px)} }
+@keyframes glam-float3 { 0%,100%{transform:rotate(6deg) translateX(80px) translateY(30px)} 50%{transform:rotate(6deg) translateX(80px) translateY(18px)} }
+.glam-float1 { animation: glam-float1 3s ease-in-out infinite; }
+.glam-float2 { animation: glam-float2 3.8s ease-in-out infinite; }
+.glam-float3 { animation: glam-float3 4.2s ease-in-out infinite; }
+
+@keyframes scrollLeft { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+@keyframes scrollRight { from{transform:translateX(-50%)} to{transform:translateX(0)} }
+.scroll-left { animation: scrollLeft 25s linear infinite; }
+.scroll-right { animation: scrollRight 20s linear infinite; }
+.scroll-brands { animation: scrollLeft 30s linear infinite; }
+
+@keyframes glamPulseRing { 0%{transform:scale(0.6);opacity:0.9} 100%{transform:scale(1.6);opacity:0} }
+.pulse-ring { animation: glamPulseRing 2s ease-out infinite; }
+.pulse-ring-2 { animation: glamPulseRing 2s ease-out infinite; animation-delay: 0.5s; }
+.pulse-ring-3 { animation: glamPulseRing 2s ease-out infinite; animation-delay: 1s; }
+
+@keyframes scanLineKf { 0%{top:0%;opacity:1} 50%{opacity:1} 100%{top:100%;opacity:0.6} }
+.scan-line { animation: scanLineKf 1.5s ease-in-out infinite; }
+
+@keyframes glamShimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+.shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: glamShimmer 2s linear infinite;
+}
+
+@keyframes glamFadeUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+.fade-up { animation: glamFadeUp 0.6s ease-out both; }
+
+@keyframes bounceY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(8px)} }
+.bounce-y { animation: bounceY 2s ease-in-out infinite; }
+
+@keyframes spinRing { to { transform: rotate(360deg); } }
+.spin-ring { animation: spinRing 1.5s linear infinite; }
+
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+.draw-check { stroke-dasharray: 100; stroke-dashoffset: 100; animation: drawCheck 0.6s ease-out forwards; }
+
+@keyframes modalIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+.modal-in { animation: modalIn 0.25s ease-out; }
+
