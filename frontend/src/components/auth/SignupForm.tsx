@@ -5,9 +5,52 @@ import Link from "next/link";
 import { User, Mail } from "lucide-react";
 import { PasswordField } from "./PasswordField";
 import { SocialButtons } from "./SocialButtons";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function SignupForm() {
   const [agreed, setAgreed] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { signUp } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError("Please fill in all required fields");
+      return;
+    }
+
+    if (!agreed) {
+      setError("Please agree to the Terms of Service and Privacy Policy");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await signUp(email, password, fullName, phone || undefined);
+    } catch (err: any) {
+      setError(err.message || "Sign up failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -18,7 +61,13 @@ export function SignupForm() {
         Join GlamSpot and get access to the best beauty experiences in Mumbai.
       </p>
 
-      <form className="mt-6 space-y-3.5" onSubmit={(e) => e.preventDefault()}>
+      {error && (
+        <div className="mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">
+          {error}
+        </div>
+      )}
+
+      <form className="mt-6 space-y-3.5" onSubmit={handleSubmit}>
         <div>
           <label htmlFor="signup-name" className="block text-[13px] font-medium text-[#111] mb-1.5">
             Full Name
@@ -29,6 +78,8 @@ export function SignupForm() {
               id="signup-name"
               type="text"
               placeholder="Enter your full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               className="w-full h-[46px] pl-10 pr-4 rounded-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
             />
           </div>
@@ -44,6 +95,8 @@ export function SignupForm() {
               id="signup-email"
               type="email"
               placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full h-[46px] pl-10 pr-4 rounded-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
             />
           </div>
@@ -61,13 +114,21 @@ export function SignupForm() {
               id="signup-phone"
               type="tel"
               placeholder="Enter your phone number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               className="flex-1 h-[46px] px-3 rounded-r-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
             />
           </div>
         </div>
 
-        <PasswordField label="Password" placeholder="Create a password" id="signup-password" />
-        <PasswordField label="Confirm Password" placeholder="Confirm your password" id="signup-confirm" />
+        <PasswordField label="Password" placeholder="Create a password" id="signup-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <PasswordField label="Confirm Password" placeholder="Confirm your password" id="signup-confirm"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+        />
 
         <label className="flex items-start gap-2 cursor-pointer select-none pt-1">
           <input
@@ -86,9 +147,10 @@ export function SignupForm() {
 
         <button
           type="submit"
-          className="w-full h-[48px] bg-[#111] text-white rounded-xl text-[15px] font-semibold hover:bg-[#333] active:scale-[0.98] transition-all mt-1"
+          disabled={loading}
+          className="w-full h-[48px] bg-[#111] text-white rounded-xl text-[15px] font-semibold hover:bg-[#333] active:scale-[0.98] transition-all mt-1 disabled:opacity-50"
         >
-          Sign Up
+          {loading ? "Creating Account..." : "Sign Up"}
         </button>
       </form>
 

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -5,6 +6,7 @@ import hpp from "hpp";
 import rateLimit from "express-rate-limit";
 
 import { config } from "./config/env";
+import { validateEnv, logSupabaseConfig, testSupabaseConnection } from "./config/validate";
 import { errorHandler } from "./middleware/error.middleware";
 import { notFoundHandler } from "./middleware/not-found.middleware";
 import { authRouter } from "./routes/auth.routes";
@@ -13,6 +15,8 @@ import { salonRouter } from "./routes/salon.routes";
 import { bookingRouter } from "./routes/booking.routes";
 import { glamaiRouter } from "./routes/glamai.routes";
 import { uploadRouter } from "./routes/upload.routes";
+
+validateEnv();
 
 const app = express();
 
@@ -38,8 +42,14 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/health", async (_req, res) => {
+  const dbResult = await testSupabaseConnection();
+  res.json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    supabase: dbResult.connected ? "connected" : "disconnected",
+    supabaseError: dbResult.error ?? undefined,
+  });
 });
 
 // API routes
@@ -59,6 +69,7 @@ const PORT = config.port;
 app.listen(PORT, () => {
   console.log(`[Backend] Server running on port ${PORT}`);
   console.log(`[Backend] Environment: ${config.nodeEnv}`);
+  logSupabaseConfig();
 });
 
 export default app;

@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import { getUserFromRequest } from "../integrations/supabase/auth";
 import {
   createAppointment,

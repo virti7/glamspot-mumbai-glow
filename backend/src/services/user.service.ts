@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import { getUserFromRequest } from "../integrations/supabase/auth";
 import { getProfile, createProfile, updateProfile } from "../repositories/user.repository";
 import { UnauthorizedError } from "@glamspot/shared/schemas";

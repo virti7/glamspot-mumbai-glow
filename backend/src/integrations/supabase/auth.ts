@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import { getSupabaseServerClient } from "./client";
 
 export interface AuthUser {
@@ -27,7 +28,7 @@ export async function getUserFromToken(token: string): Promise<AuthUser | null> 
 }
 
 export async function getUserFromRequest(request: Request): Promise<AuthUser | null> {
-  const auth = request.headers.get("authorization");
+  const auth = request.headers.authorization;
   if (!auth?.startsWith("Bearer ")) return null;
   const token = auth.slice(7);
   return getUserFromToken(token);

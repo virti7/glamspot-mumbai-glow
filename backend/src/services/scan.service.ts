@@ -1,3 +1,4 @@
+import type { Request } from "express";
 import { uploadImage } from "../integrations/supabase/storage";
 import { getUserFromRequest } from "../integrations/supabase/auth";
 import { createScan } from "../repositories/scan.repository";

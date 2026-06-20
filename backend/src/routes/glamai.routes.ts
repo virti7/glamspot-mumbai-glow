@@ -1,14 +1,26 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { requireScanQuota } from "../middleware/subscription.middleware";
 import { uploadScanService } from "../services/scan.service";
 import { analyzeScanService } from "../services/analysis.service";
 import { getUserFromRequest } from "../integrations/supabase/auth";
 import { getUserScans } from "../repositories/scan.repository";
+import { checkScanLimit } from "../repositories/subscription.repository";
 import { UnauthorizedError } from "@glamspot/shared/schemas";
 
 export const glamaiRouter = Router();
 
-glamaiRouter.post("/upload", authMiddleware, async (req, res) => {
+glamaiRouter.get("/quota", authMiddleware, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const quota = await checkScanLimit(user.id);
+    res.json(quota);
+  } catch {
+    res.status(500).json({ error: "Failed to check quota" });
+  }
+});
+
+glamaiRouter.post("/upload", authMiddleware, requireScanQuota, async (req, res) => {
   try {
     const { imageBase64, mediaType } = req.body;
     const result = await uploadScanService(req as any, imageBase64, mediaType);

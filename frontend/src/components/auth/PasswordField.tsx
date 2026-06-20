@@ -7,9 +7,11 @@ interface PasswordFieldProps {
   label: string;
   placeholder: string;
   id: string;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function PasswordField({ label, placeholder, id }: PasswordFieldProps) {
+export function PasswordField({ label, placeholder, id, value, onChange }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -23,13 +25,14 @@ export function PasswordField({ label, placeholder, id }: PasswordFieldProps) {
           id={id}
           type={visible ? "text" : "password"}
           placeholder={placeholder}
+          value={value}
+          onChange={onChange}
           className="w-full h-[46px] pl-10 pr-10 rounded-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
         />
         <button
           type="button"
-          onClick={() => setVisible(!visible)}
-          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#6B7280] transition-colors"
-          tabIndex={-1}
+          onClick={() => setVisible((v) => !v)}
+          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#111] transition"
         >
           {visible ? <EyeOff size={16} /> : <Eye size={16} />}
         </button>
