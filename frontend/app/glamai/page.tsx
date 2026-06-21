@@ -225,13 +225,13 @@ export default function GlamAIPage() {
     <div className="min-h-screen bg-[#FAF8F6]">
       <DashboardNavbar />
 
-      <main className="w-full max-w-[1280px] mx-auto px-4 lg:px-6 pt-[100px] pb-14 space-y-6">
+      <main className="w-full max-w-none px-4 lg:px-6 pt-[100px] pb-14 space-y-6">
         {/* ===== HERO BANNER ===== */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-[24px] h-[220px]"
+          className="relative overflow-hidden rounded-[28px] h-[220px]"
           style={{ background: "linear-gradient(135deg, #FFF7FA 0%, #FCE7F3 50%, #FFFFFF 100%)" }}
         >
           <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-pink-200/30 blur-3xl" />
@@ -247,19 +247,16 @@ export default function GlamAIPage() {
               </p>
               <div className="flex flex-wrap items-center gap-3">
                 {[
-                  { label: "Accurate Analysis", sub: "AI-Powered" },
-                  { label: "Personalized", sub: "Just for you" },
-                  { label: "Smart Recommendations", sub: "Better Results" },
+                  { label: "Accurate Analysis", emoji: "🎯" },
+                  { label: "Personalized", emoji: "👤" },
+                  { label: "Smart Recommendations", emoji: "✨" },
                 ].map((pill) => (
                   <div
                     key={pill.label}
                     className="flex items-center gap-1.5 bg-white/80 backdrop-blur-sm rounded-full px-3.5 py-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]"
                   >
-                    <div className="w-4 h-4 rounded-full bg-emerald-400 flex items-center justify-center">
-                      <Check size={10} className="text-white" />
-                    </div>
+                    <span className="text-[12px]">{pill.emoji}</span>
                     <span className="text-[11px] font-semibold text-[#111]">{pill.label}</span>
-                    <span className="text-[10px] text-gray-400">• {pill.sub}</span>
                   </div>
                 ))}
               </div>
@@ -298,17 +295,17 @@ export default function GlamAIPage() {
         </motion.div>
 
         {/* ===== TWO COLUMN LAYOUT ===== */}
-        <div className="grid grid-cols-1 lg:grid-cols-[40%_60%] gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[38%_62%] gap-6" style={{ minHeight: "800px" }}>
           {/* ========== LEFT COLUMN ========== */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="flex flex-col gap-4"
+            className="flex flex-col gap-4 h-full"
           >
             <div
-              className="bg-white rounded-[24px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col"
-              style={{ minHeight: "540px" }}
+              className="bg-white rounded-[24px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col h-full"
+              style={{ minHeight: "800px" }}
             >
               <div className="px-6 py-4 border-b border-gray-50">
                 <div className="flex items-center gap-2.5">
@@ -333,9 +330,8 @@ export default function GlamAIPage() {
                     className={`h-full border-2 border-dashed rounded-[20px] flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 ${
                       dragOver
                         ? "border-pink-400 bg-pink-50"
-                        : "border-pink-200 bg-[#FFF7FA] hover:border-pink-300 hover:bg-[#FFF0F5]"
+                        : "border-[#F9A8D4] bg-[#FFF9FB] hover:border-pink-300 hover:bg-[#FFF0F5]"
                     }`}
-                    style={{ minHeight: "380px" }}
                   >
                     <motion.div
                       animate={dragOver ? { scale: 1.1 } : { scale: 1 }}
@@ -357,7 +353,8 @@ export default function GlamAIPage() {
                     ) : (
                       <button
                         onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#111] text-white text-[14px] font-semibold hover:bg-[#333] hover:scale-105 transition-all duration-300 shadow-[0_6px_20px_rgba(0,0,0,0.15)]"
+                        className="inline-flex items-center justify-center gap-2 px-8 rounded-full bg-[#111] text-white text-[14px] font-semibold hover:bg-[#333] hover:scale-105 transition-all duration-300 shadow-[0_6px_20px_rgba(0,0,0,0.15)]"
+                        style={{ height: "52px", width: "200px" }}
                       >
                         <Upload size={15} />
                         Choose Photo
@@ -378,40 +375,39 @@ export default function GlamAIPage() {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="h-full flex flex-col items-center justify-center"
+                    className="h-full flex flex-col"
                     style={{ minHeight: "380px" }}
                   >
-                    <div className="relative w-[140px] h-[140px] mb-6">
-                      <img
-                        src={preview}
-                        alt="Upload"
-                        className="w-full h-full rounded-[20px] object-cover shadow-lg"
-                      />
-                      <div
-                        className="absolute -inset-1.5 rounded-[24px] spin-ring"
-                        style={{ border: "3px solid transparent", borderTopColor: "#EC4899", borderRightColor: "#F472B6" }}
-                      />
-                      <div className="absolute inset-0 rounded-[20px] overflow-hidden">
-                        <div
-                          className="scan-line absolute left-0 right-0 h-[3px]"
-                          style={{ background: "linear-gradient(90deg, transparent, #EC4899, transparent)" }}
-                        />
+                    <div className="relative flex-1 rounded-[20px] overflow-hidden bg-gray-50">
+                      <img src={preview} alt="Upload" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="relative w-16 h-16 mx-auto mb-4">
+                            <div className="absolute inset-0 rounded-full spin-ring" style={{ border: "3px solid transparent", borderTopColor: "#EC4899", borderRightColor: "#F472B6" }} />
+                            <div className="absolute inset-0 rounded-full overflow-hidden">
+                              <div className="scan-line absolute left-0 right-0 h-[2px]" style={{ background: "linear-gradient(90deg, transparent, #EC4899, transparent)" }} />
+                            </div>
+                            <div className="absolute inset-2 rounded-full bg-white/90 flex items-center justify-center">
+                              <Sparkles size={20} className="text-[#EC4899]" />
+                            </div>
+                          </div>
+                          <p className="text-white text-[14px] font-semibold drop-shadow-lg">
+                            {state === "uploading" ? "Uploading..." : "Analyzing..."}
+                          </p>
+                          <AnimatePresence mode="wait">
+                            <motion.p
+                              key={msgIdx}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className="text-white/70 text-[12px] mt-1 drop-shadow"
+                            >
+                              {SCAN_MESSAGES[msgIdx]}
+                            </motion.p>
+                          </AnimatePresence>
+                        </div>
                       </div>
                     </div>
-                    <p className="text-[#111] text-[15px] font-semibold">
-                      {state === "uploading" ? "Uploading your photo..." : "Analyzing your beauty..."}
-                    </p>
-                    <AnimatePresence mode="wait">
-                      <motion.p
-                        key={msgIdx}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        className="text-gray-400 text-[12px] mt-2"
-                      >
-                        {SCAN_MESSAGES[msgIdx]}
-                      </motion.p>
-                    </AnimatePresence>
                   </motion.div>
                 )}
 
@@ -471,18 +467,6 @@ export default function GlamAIPage() {
                 )}
               </div>
             </div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3 }}
-              className="flex items-center gap-2.5 px-2"
-            >
-              <Shield size={14} className="text-gray-400 shrink-0" />
-              <p className="text-[11px] text-gray-400 leading-relaxed">
-                Your photos are private and secure. We only use them for analysis.
-              </p>
-            </motion.div>
           </motion.div>
 
           {/* ========== RIGHT COLUMN ========== */}
@@ -490,8 +474,8 @@ export default function GlamAIPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="bg-white rounded-[24px] border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col"
-            style={{ minHeight: "540px" }}
+            className="bg-white rounded-[24px] border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col h-full"
+            style={{ minHeight: "800px" }}
           >
             <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -505,10 +489,10 @@ export default function GlamAIPage() {
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.3, type: "spring" }}
-                  className="flex items-center gap-1.5 bg-gradient-to-r from-pink-50 to-rose-50 rounded-full px-4 py-1.5 border border-pink-100"
+                  className="flex items-center gap-1.5 bg-[#FCE7F3] rounded-full px-4 py-1.5 border border-pink-100"
                 >
                   <span className="text-[11px] text-gray-500 font-medium">AI Score</span>
-                  <span className="text-[22px] font-bold bg-gradient-to-r from-pink-500 to-rose-400 bg-clip-text text-transparent leading-none">
+                  <span className="text-[22px] font-bold text-[#EC4899] leading-none">
                     {scoreAnim}
                   </span>
                   <span className="text-[11px] text-gray-300 font-medium">/100</span>
@@ -552,24 +536,99 @@ export default function GlamAIPage() {
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="flex flex-col items-center justify-center h-full text-center"
+                  className="flex flex-col h-full text-center"
                 >
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center mb-5">
-                    <Sparkles size={28} className="text-pink-300" />
-                  </div>
-                  <h4 className="font-display text-[19px] font-semibold text-[#111] mb-1.5">
-                    Your AI Report Will Appear Here
-                  </h4>
-                  <p className="text-[13px] text-gray-400 max-w-xs leading-relaxed">
-                    Upload a photo to get your personalized beauty diagnosis with detailed analysis and recommendations.
-                  </p>
-                  <div className="w-full max-w-sm mt-6 space-y-3 blur-sm select-none opacity-30">
-                    <div className="h-20 bg-gray-50 rounded-xl" />
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="h-28 bg-gray-50 rounded-xl" />
-                      <div className="h-28 bg-gray-50 rounded-xl" />
+                  <div className="relative rounded-[20px] overflow-hidden p-8 mb-6" style={{ background: "linear-gradient(135deg, #FFF7FA 0%, #FCE7F3 50%, #FFF0F5 100%)" }}>
+                    <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full bg-pink-200/30 blur-3xl" />
+                    <div className="absolute -bottom-10 left-1/4 w-32 h-32 rounded-full bg-rose-200/20 blur-3xl" />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <span className="text-[28px]">✨</span>
+                        <h4 className="font-display text-[22px] font-bold text-[#111]">
+                          AI Beauty Analysis
+                        </h4>
+                      </div>
+                      <p className="text-[13px] text-gray-500 mb-4">
+                        Upload a photo to receive your personalized beauty report
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {["Hair Analysis", "Skin Analysis", "Beauty Score", "Product Recs", "Salon Recs"].map((feature) => (
+                          <span
+                            key={feature}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-sm text-[11px] font-medium text-gray-600 shadow-sm"
+                          >
+                            <Check size={10} className="text-pink-400" />
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <div className="h-16 bg-gray-50 rounded-xl" />
+                  </div>
+
+                  <div className="bg-gray-50 rounded-[20px] p-6 mb-6">
+                    <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-4">Example Preview</div>
+                    <div className="flex items-start gap-6">
+                      <div className="relative shrink-0">
+                        <div className="w-[120px] h-[120px] rounded-full bg-gradient-to-br from-pink-100 to-rose-100 flex items-center justify-center">
+                          <span className="text-[36px] font-bold text-pink-400">92</span>
+                        </div>
+                        <div className="absolute inset-0 rounded-full border-4 border-pink-200/50" />
+                      </div>
+                      <div className="flex-1 text-left space-y-3">
+                        <div>
+                          <div className="flex justify-between text-[12px] mb-1">
+                            <span className="text-gray-500">Hair Health</span>
+                            <span className="font-semibold text-pink-500">90%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-pink-400 rounded-full" style={{ width: "90%" }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[12px] mb-1">
+                            <span className="text-gray-500">Skin Health</span>
+                            <span className="font-semibold text-purple-500">94%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-400 rounded-full" style={{ width: "94%" }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[12px] mb-1">
+                            <span className="text-gray-500">Overall Score</span>
+                            <span className="font-semibold text-emerald-500">92%</span>
+                          </div>
+                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div className="h-full bg-emerald-400 rounded-full" style={{ width: "92%" }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto">
+                    <div className="flex items-center justify-center gap-3 text-[12px] text-gray-400">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-full bg-pink-100 flex items-center justify-center">
+                          <Camera size={11} className="text-pink-500" />
+                        </div>
+                        <span>Upload Photo</span>
+                      </div>
+                      <ChevronRight size={12} className="text-gray-300" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-full bg-purple-100 flex items-center justify-center">
+                          <Sparkles size={11} className="text-purple-500" />
+                        </div>
+                        <span>AI Analysis</span>
+                      </div>
+                      <ChevronRight size={12} className="text-gray-300" />
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center">
+                          <Star size={11} className="text-amber-500" />
+                        </div>
+                        <span>Get Results</span>
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               ) : (
@@ -667,8 +726,19 @@ export default function GlamAIPage() {
                           <div className="flex-1">
                             <h4 className="font-semibold text-[#111] text-[15px] mb-1">Top Recommendation</h4>
                             <p className="text-[12px] text-gray-500 leading-relaxed max-w-[70%]">
-                              {MOCK_ANALYSIS.recommendation}
+                              Continue with your current hair care routine and maintain hydration for best results.
                             </p>
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/80 text-[10px] font-medium text-[#EC4899]">
+                                <Scissors size={10} /> Suggested Treatments
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/80 text-[10px] font-medium text-[#A855F7]">
+                                <Droplets size={10} /> Suggested Products
+                              </span>
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/80 text-[10px] font-medium text-[#F59E0B]">
+                                <Star size={10} /> Salon Services
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <div className="hidden sm:block absolute right-0 top-0 bottom-0 w-[35%]">
@@ -885,7 +955,7 @@ export default function GlamAIPage() {
 
                       <div
                         className="relative rounded-[20px] overflow-hidden p-6"
-                        style={{ background: "linear-gradient(135deg, #FFF7FA 0%, #FCE7F3 50%, #FFFFFF 100%)" }}
+          style={{ background: "linear-gradient(135deg, #FFF7FA 0%, #FCE7F3 50%, #FFFDFD 100%)" }}
                       >
                         <div className="relative z-10">
                           <div className="flex items-center gap-2 mb-3">
