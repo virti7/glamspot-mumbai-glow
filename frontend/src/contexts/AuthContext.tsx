@@ -33,7 +33,7 @@ interface AuthContextType {
   subscription: AuthSubscription | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, fullName: string, phone?: string) => Promise<void>;
+  signUp: (email: string, password: string, fullName: string, phone?: string, role?: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshSession: () => Promise<void>;
   isAuthenticated: boolean;
@@ -126,27 +126,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [router]);
 
-  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string) => {
+  const signUp = useCallback(async (email: string, password: string, fullName: string, phone?: string, role?: string) => {
     setLoading(true);
     try {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, fullName, phone }),
+        body: JSON.stringify({ email, password, fullName, phone, role }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server returned non-JSON response: "${text.slice(0, 100)}"`);
+      }
 
       if (!res.ok) {
-        throw new Error(data.error || "Sign up failed");
+        throw new Error(data.error || `Sign up failed (${res.status})`);
       }
 
       setAccessToken(data.token);
       setUser(data.user);
       setProfile(data.profile);
       setSubscription(data.subscription);
-      router.push("/dashboard");
+      if (data.profile.role === "salon_owner") {
+        router.push("/salon-dashboard");
+      } else if (data.profile.role === "admin") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error: any) {
+      console.error("Signup error:", error);
       throw error;
     } finally {
       setLoading(false);

@@ -13,6 +13,7 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 
   if (error) {
     if (error.code === "PGRST116") return null;
+    console.error("[getProfile] Error:", error.message);
     throw new AppError(`Failed to fetch profile: ${error.message}`, "DB_ERROR", 500);
   }
 
@@ -23,8 +24,13 @@ export async function createProfile(
   userId: string,
   fullName: string | null,
   phone: string | null,
+  role: string = "customer",
 ): Promise<Profile> {
   const supabase = getSupabaseServerClient();
+
+  // Ensure role is a valid enum value
+  const validRoles = ["customer", "salon_owner", "admin"];
+  const safeRole = validRoles.includes(role) ? role : "customer";
 
   const { data, error } = await supabase
     .from("profiles")
@@ -32,12 +38,14 @@ export async function createProfile(
       id: userId,
       full_name: fullName,
       phone,
+      role: safeRole,
     })
     .select("*")
     .single();
 
   if (error) {
-    throw new AppError(`Failed to create profile: ${error.message}`, "DB_ERROR", 500);
+    console.error("[createProfile] Error:", error.message, error.code, error.details);
+    throw new AppError(`Database error creating profile: ${error.message}`, "DB_ERROR", 500);
   }
 
   return data as Profile;
@@ -57,6 +65,7 @@ export async function updateProfile(
     .single();
 
   if (error) {
+    console.error("[updateProfile] Error:", error.message);
     throw new AppError(`Failed to update profile: ${error.message}`, "DB_ERROR", 500);
   }
 

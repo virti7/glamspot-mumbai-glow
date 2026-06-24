@@ -4,7 +4,7 @@ import { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, MapPin, Heart, BadgeCheck } from "lucide-react";
+import { Star, MapPin, Heart, BadgeCheck, Crown } from "lucide-react";
 import type { Salon } from "@/services/salon.service";
 
 const salonImages = [
@@ -48,11 +48,15 @@ function SalonCardComponent({ salon, index, isFavorite, onToggleFavorite, user }
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-          {salon.is_verified && (
-            <span className="absolute top-4 left-4 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-[#F5C842] to-[#F59E0B] text-[#111] text-[11px] font-bold shadow-lg">
-              <BadgeCheck size={12} /> Verified
-            </span>
-          )}
+            {salon.is_claimed ? (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#EC4899]/20 to-[#DB2777]/20 text-[#BE185D] text-[10px] font-bold">
+                <Crown size={10} /> Owner Verified
+              </span>
+            ) : salon.is_verified ? (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#F5C842]/20 to-[#F59E0B]/20 text-[#B8860B] text-[10px] font-bold">
+                <BadgeCheck size={10} /> Verified
+              </span>
+            ) : null}
 
           {user && (
             <button

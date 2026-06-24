@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
-import { getSalons, getSalonById, getSalonServices, getSalonByOwnerId } from "../repositories/salon.repository";
+import { getSalons, getSalonById, getSalonServices, getSalonByOwnerId, getSalonBySlug } from "../repositories/salon.repository";
 
 export const salonRouter = Router();
 
@@ -30,7 +30,7 @@ salonRouter.get("/", async (req, res) => {
 
     res.json(result);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch salons" });
+    res.status(error?.status ?? 500).json({ error: error?.message ?? "Failed to fetch salons" });
   }
 });
 
@@ -44,7 +44,20 @@ salonRouter.get("/owner", authMiddleware, async (req, res) => {
     }
     res.json(salon);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch salon" });
+    res.status(500).json({ error: error?.message ?? "Failed to fetch salon" });
+  }
+});
+
+salonRouter.get("/slug/:slug", async (req, res) => {
+  try {
+    const salon = await getSalonBySlug(req.params.slug);
+    if (!salon) {
+      res.status(404).json({ error: "Salon not found" });
+      return;
+    }
+    res.json(salon);
+  } catch (error: any) {
+    res.status(500).json({ error: error?.message ?? "Failed to fetch salon" });
   }
 });
 
@@ -57,7 +70,7 @@ salonRouter.get("/:id", async (req, res) => {
     }
     res.json(salon);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch salon" });
+    res.status(500).json({ error: error?.message ?? "Failed to fetch salon" });
   }
 });
 
@@ -66,6 +79,6 @@ salonRouter.get("/:id/services", async (req, res) => {
     const services = await getSalonServices(req.params.id);
     res.json(services);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch services" });
+    res.status(500).json({ error: error?.message ?? "Failed to fetch services" });
   }
 });

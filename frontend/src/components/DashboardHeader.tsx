@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, User, LayoutDashboard } from "lucide-react";
+import { LogOut, User, LayoutDashboard, Shield } from "lucide-react";
 
 export function DashboardHeader() {
-  const { profile, signOut, isSalonOwner } = useAuth();
+  const { profile, signOut, isSalonOwner, isAdmin } = useAuth();
 
   return (
     <header className="bg-white border-b border-[#E8E8E8] px-6 py-4">
@@ -36,6 +36,15 @@ export function DashboardHeader() {
           </nav>
         </div>
         <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[13px] text-[#FF4FA2] border border-[#FF4FA2]/30 hover:bg-pink-50 transition"
+            >
+              <Shield size={14} />
+              Admin
+            </Link>
+          )}
           <Link
             href="/profile"
             className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#E8E8E8] text-[13px] text-[#333] hover:border-[#111] transition"

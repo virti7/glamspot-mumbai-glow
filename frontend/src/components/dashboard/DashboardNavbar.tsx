@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, ChevronDown, LayoutDashboard, Calendar, MapPin, Sparkles, Heart, Crown, Home } from "lucide-react";
+import { LogOut, ChevronDown, LayoutDashboard, Calendar, MapPin, Sparkles, Heart, Crown, Home, Shield } from "lucide-react";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: Home },
@@ -16,7 +16,7 @@ const navItems = [
 ];
 
 export function DashboardNavbar() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, isAdmin } = useAuth();
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -69,6 +69,17 @@ export function DashboardNavbar() {
 
         {/* Right Side */}
         <div className="flex items-center gap-2 shrink-0">
+          {/* Admin Link */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-[#FF4FA2] hover:bg-pink-50 transition-all duration-200"
+            >
+              <Shield size={15} />
+              Admin
+            </Link>
+          )}
+
           {/* User Avatar + Name + Dropdown */}
           <div className="relative">
             <button
@@ -104,7 +115,9 @@ export function DashboardNavbar() {
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 py-2 z-50 modal-in">
                   <div className="px-4 py-2.5 border-b border-gray-50">
                     <p className="text-[13px] font-semibold text-gray-800">{profile?.full_name || "User"}</p>
-                    <p className="text-[11.5px] text-gray-400 mt-0.5">{profile?.role === "salon_owner" ? "Salon Owner" : "Member"}</p>
+                    <p className="text-[11.5px] text-gray-400 mt-0.5">
+                      {profile?.role === "salon_owner" ? "Salon Owner" : profile?.role === "admin" ? "Admin" : "Member"}
+                    </p>
                   </div>
                   <Link
                     href="/profile"
@@ -113,6 +126,16 @@ export function DashboardNavbar() {
                   >
                     Profile Settings
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-[#FF4FA2] hover:bg-pink-50 transition"
+                      onClick={() => setShowDropdown(false)}
+                    >
+                      <Shield size={14} />
+                      Admin Panel
+                    </Link>
+                  )}
                   <button
                     onClick={() => { setShowDropdown(false); signOut(); }}
                     className="flex items-center gap-2.5 px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 transition w-full text-left"

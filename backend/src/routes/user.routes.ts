@@ -11,7 +11,7 @@ userRouter.get("/profile", authMiddleware, async (req, res) => {
     const profile = await getProfileService(req as any);
     res.json(profile);
   } catch (error: any) {
-    res.status(error.status || 500).json({ error: error.message || "Failed to fetch profile" });
+    res.status(error?.status ?? 500).json({ error: error?.message ?? "Failed to fetch profile" });
   }
 });
 
@@ -20,7 +20,7 @@ userRouter.put("/profile", authMiddleware, async (req, res) => {
     const profile = await updateProfileService(req as any, req.body);
     res.json(profile);
   } catch (error: any) {
-    res.status(error.status || 500).json({ error: error.message || "Failed to update profile" });
+    res.status(error?.status ?? 500).json({ error: error?.message ?? "Failed to update profile" });
   }
 });
 
@@ -30,7 +30,7 @@ userRouter.get("/subscription", authMiddleware, async (req, res) => {
     const subscription = await getUserSubscription(user.id);
     res.json(subscription);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to fetch subscription" });
+    res.status(500).json({ error: error?.message ?? "Failed to fetch subscription" });
   }
 });
 
@@ -40,7 +40,7 @@ userRouter.get("/scan-quota", authMiddleware, async (req, res) => {
     const quota = await checkScanLimit(user.id);
     res.json(quota);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to check scan quota" });
+    res.status(500).json({ error: error?.message ?? "Failed to check scan quota" });
   }
 });
 

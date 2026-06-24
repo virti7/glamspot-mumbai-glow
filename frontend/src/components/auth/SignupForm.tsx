@@ -14,6 +14,7 @@ export function SignupForm() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
@@ -44,7 +45,7 @@ export function SignupForm() {
 
     setLoading(true);
     try {
-      await signUp(email, password, fullName, phone || undefined);
+      await signUp(email, password, fullName, phone || undefined, role);
     } catch (err: any) {
       setError(err.message || "Sign up failed. Please try again.");
     } finally {
@@ -119,6 +120,39 @@ export function SignupForm() {
               className="flex-1 h-[46px] px-3 rounded-r-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-[13px] font-medium text-[#111] mb-2">Account Type</label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setRole("customer")}
+              className={`flex-1 h-[46px] rounded-xl border-2 text-[14px] font-semibold transition-all ${
+                role === "customer"
+                  ? "border-[#EC4899] bg-[#EC4899]/5 text-[#EC4899]"
+                  : "border-[#E5E7EB] text-[#6B7280] hover:border-gray-300"
+              }`}
+            >
+              Customer
+            </button>
+            <button
+              type="button"
+              onClick={() => setRole("salon_owner")}
+              className={`flex-1 h-[46px] rounded-xl border-2 text-[14px] font-semibold transition-all ${
+                role === "salon_owner"
+                  ? "border-[#EC4899] bg-[#EC4899]/5 text-[#EC4899]"
+                  : "border-[#E5E7EB] text-[#6B7280] hover:border-gray-300"
+              }`}
+            >
+              Salon Owner
+            </button>
+          </div>
+          {role === "salon_owner" && (
+            <p className="text-[12px] text-amber-600 mt-1.5">
+              After signup, you can search for your salon and submit an ownership claim for admin approval.
+            </p>
+          )}
         </div>
 
         <PasswordField label="Password" placeholder="Create a password" id="signup-password"

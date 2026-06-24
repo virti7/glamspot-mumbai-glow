@@ -7,23 +7,32 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  console.error("[Error]", err);
+  console.error("[ErrorHandler]", err?.message || err);
 
-  if (err instanceof AppError) {
-    res.status(err.status).json({
-      error: err.message,
-      code: err.code,
+  try {
+    if (err instanceof AppError) {
+      res.status(err.status).json({
+        error: err.message,
+        code: err.code,
+      });
+      return;
+    }
+
+    if (err instanceof Response) {
+      res.status(err.status).json({ error: "Unauthorized" });
+      return;
+    }
+
+    res.status(500).json({
+      error: "Internal server error",
+      code: "INTERNAL_ERROR",
     });
-    return;
+  } catch {
+    // Absolute fallback — ensure we never send non-JSON
+    try {
+      res.status(500).json({ error: "Internal server error" });
+    } catch {
+      // If even JSON fails, the response was already sent
+    }
   }
-
-  if (err instanceof Response) {
-    res.status(err.status).json({ error: "Unauthorized" });
-    return;
-  }
-
-  res.status(500).json({
-    error: "Internal server error",
-    code: "INTERNAL_ERROR",
-  });
 }

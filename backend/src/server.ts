@@ -15,6 +15,8 @@ import { salonRouter } from "./routes/salon.routes";
 import { bookingRouter } from "./routes/booking.routes";
 import { glamaiRouter } from "./routes/glamai.routes";
 import { uploadRouter } from "./routes/upload.routes";
+import { salonManagementRouter } from "./routes/salon-management.routes";
+import { adminRouter } from "./routes/admin.routes";
 
 validateEnv();
 
@@ -59,6 +61,8 @@ app.use("/api/salons", salonRouter);
 app.use("/api/bookings", bookingRouter);
 app.use("/api/glamai", glamaiRouter);
 app.use("/api/uploads", uploadRouter);
+app.use("/api/salon-management", salonManagementRouter);
+app.use("/api/admin", adminRouter);
 
 // Error handling
 app.use(notFoundHandler);

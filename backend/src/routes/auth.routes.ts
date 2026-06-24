@@ -6,7 +6,9 @@ export const authRouter = Router();
 
 authRouter.post("/signup", async (req, res) => {
   try {
-    const { email, password, fullName, phone } = req.body;
+    const { email, password, fullName, phone, role } = req.body;
+
+    console.log("[POST /signup] Request received", { email, fullName, role });
 
     if (!email || !password || !fullName) {
       res.status(400).json({ error: "Email, password, and full name are required" });
@@ -18,10 +20,15 @@ authRouter.post("/signup", async (req, res) => {
       return;
     }
 
-    const result = await signUpService(email, password, fullName, phone);
+    const validRole = role === "salon_owner" ? "salon_owner" : "customer";
+    const result = await signUpService(email, password, fullName, phone, validRole);
+    console.log("[POST /signup] Success for", email);
     res.status(201).json(result);
   } catch (error: any) {
-    res.status(error.status || 400).json({ error: error.message || "Failed to sign up" });
+    const status = error?.status ?? 400;
+    const message = error?.message ?? (typeof error === "string" ? error : "Failed to sign up");
+    console.error("[POST /signup] Error:", error);
+    res.status(status).json({ error: message });
   }
 });
 
@@ -37,7 +44,31 @@ authRouter.post("/signin", async (req, res) => {
     const result = await signInService(email, password);
     res.json(result);
   } catch (error: any) {
-    res.status(error.status || 401).json({ error: error.message || "Invalid email or password" });
+    const status = error?.status ?? 401;
+    const message = error?.message ?? (typeof error === "string" ? error : "Invalid email or password");
+    console.error("[POST /signin] Error:", error);
+    res.status(status).json({ error: message });
+  }
+});
+
+authRouter.post("/admin-signin", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      res.status(400).json({ error: "Email and password are required" });
+      return;
+    }
+    const result = await signInService(email, password);
+    if (result.profile.role !== "admin") {
+      res.status(403).json({ error: "Access Denied. Admin privileges required." });
+      return;
+    }
+    res.json(result);
+  } catch (error: any) {
+    const status = error?.status ?? 401;
+    const message = error?.message ?? (typeof error === "string" ? error : "Invalid email or password");
+    console.error("[POST /admin-signin] Error:", error);
+    res.status(status).json({ error: message });
   }
 });
 
@@ -63,6 +94,9 @@ authRouter.get("/session", async (req, res) => {
     const result = await getSessionService(token);
     res.json(result);
   } catch (error: any) {
-    res.status(error.status || 401).json({ error: error.message || "Session invalid" });
+    const status = error?.status ?? 401;
+    const message = error?.message ?? (typeof error === "string" ? error : "Session invalid");
+    console.error("[GET /session] Error:", error);
+    res.status(status).json({ error: message });
   }
 });

@@ -11,6 +11,7 @@ export interface SalonRecord {
   address: string | null;
   locality: string | null;
   city: string;
+  state: string | null;
   rating: number;
   reviews_count: number;
   price_min: number | null;
@@ -20,6 +21,10 @@ export interface SalonRecord {
   amenities: string[];
   tags: string[];
   is_verified: boolean;
+  is_active: boolean;
+  is_claimed: boolean;
+  claimed_at: string | null;
+  owner_id: string | null;
   opening_time: string | null;
   closing_time: string | null;
   created_at: string;
@@ -37,8 +42,54 @@ export interface SalonServiceRecord {
   is_popular: boolean;
 }
 
+export interface SalonStaffRecord {
+  id: string;
+  salon_id: string;
+  name: string;
+  role: string | null;
+  specialization: string | null;
+  experience: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  photo: string | null;
+  is_active: boolean;
+}
+
+export interface SalonHoursRecord {
+  id: string;
+  salon_id: string;
+  day_of_week: number;
+  is_closed: boolean;
+  open_time: string | null;
+  close_time: string | null;
+}
+
+export interface SalonImageRecord {
+  id: string;
+  salon_id: string;
+  image_url: string;
+  category: string | null;
+  is_primary: boolean;
+  sort_order: number;
+}
+
+export interface SalonReviewRecord {
+  id: string;
+  user_id: string;
+  salon_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  user: { full_name: string; avatar_url: string | null } | null;
+  owner_reply: string | null;
+}
+
 export interface SalonWithServices extends SalonRecord {
   services: SalonServiceRecord[];
+  images?: SalonImageRecord[];
+  staff?: SalonStaffRecord[];
+  hours?: SalonHoursRecord[];
+  reviews?: SalonReviewRecord[];
 }
 
 export async function getSalons(params: {
@@ -101,6 +152,46 @@ export async function getSalons(params: {
   };
 }
 
+async function getSalonRelatedData(supabase: any, salonId: string) {
+  const [services, images, staff, hours, reviews] = await Promise.all([
+    supabase.from("salon_services").select("*").eq("salon_id", salonId).eq("is_active", true).order("is_popular", { ascending: false }),
+    supabase.from("salon_images").select("*").eq("salon_id", salonId).order("is_primary", { ascending: false }).order("sort_order", { ascending: true }),
+    supabase.from("salon_staff").select("*").eq("salon_id", salonId).eq("is_active", true).order("created_at", { ascending: false }),
+    supabase.from("salon_hours").select("*").eq("salon_id", salonId).order("day_of_week", { ascending: true }),
+    supabase.from("reviews").select("*, user:profiles(full_name, avatar_url)").eq("salon_id", salonId).order("created_at", { ascending: false }).limit(10),
+  ]);
+  return {
+    services: (services.data ?? []) as SalonServiceRecord[],
+    images: (images.data ?? []) as SalonImageRecord[],
+    staff: (staff.data ?? []) as SalonStaffRecord[],
+    hours: (hours.data ?? []) as SalonHoursRecord[],
+    reviews: (reviews.data ?? []) as SalonReviewRecord[],
+  };
+}
+
+export async function getSalonBySlug(slug: string): Promise<SalonWithServices | null> {
+  const supabase = getSupabaseServerClient();
+
+  const { data: salon, error } = await supabase
+    .from("salons")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") return null;
+    throw new AppError(`Failed to fetch salon: ${error.message}`, "DB_ERROR", 500);
+  }
+
+  const related = await getSalonRelatedData(supabase, salon.id);
+
+  return {
+    ...(salon as SalonRecord),
+    ...related,
+  };
+}
+
 export async function getSalonById(id: string): Promise<SalonWithServices | null> {
   const supabase = getSupabaseServerClient();
 
@@ -115,16 +206,11 @@ export async function getSalonById(id: string): Promise<SalonWithServices | null
     throw new AppError(`Failed to fetch salon: ${error.message}`, "DB_ERROR", 500);
   }
 
-  const { data: services } = await supabase
-    .from("salon_services")
-    .select("*")
-    .eq("salon_id", id)
-    .eq("is_active", true)
-    .order("is_popular", { ascending: false });
+  const related = await getSalonRelatedData(supabase, salon.id);
 
   return {
     ...(salon as SalonRecord),
-    services: (services ?? []) as SalonServiceRecord[],
+    ...related,
   };
 }
 
@@ -153,13 +239,11 @@ export async function getSalonByOwnerId(ownerId: string): Promise<SalonRecord | 
     .from("salons")
     .select("*")
     .eq("owner_id", ownerId)
-    .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error) {
-    if (error.code === "PGRST116") return null;
     throw new AppError(`Failed to fetch salon: ${error.message}`, "DB_ERROR", 500);
   }
 
-  return data as SalonRecord;
+  return data as SalonRecord | null;
 }

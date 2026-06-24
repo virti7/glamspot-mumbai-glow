@@ -31,59 +31,83 @@ export async function signUpService(
   password: string,
   fullName: string,
   phone?: string,
+  role: string = "customer",
 ): Promise<AuthResponse> {
   const supabase = getSupabaseServerClient();
+
+  console.log("[signUpService] Creating auth user", { email, role });
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: fullName, phone: phone || null },
+    user_metadata: { full_name: fullName, phone: phone || null, role },
   });
 
   if (authError || !authData.user) {
+    console.error("[signUpService] Auth user creation failed:", authError?.message);
     throw new AppError(authError?.message || "Failed to create account", "AUTH_ERROR", 400);
   }
 
   const userId = authData.user.id;
+  console.log("[signUpService] Auth user created:", userId);
 
+  // Create profile with retry
+  console.log("[signUpService] Creating profile");
   let profile;
   try {
-    profile = await createProfile(userId, fullName, phone || null);
-  } catch {
+    profile = await createProfile(userId, fullName, phone || null, role);
+    console.log("[signUpService] Profile created");
+  } catch (err: any) {
+    console.warn("[signUpService] First profile attempt failed, retrying:", err.message);
     const existing = await getProfile(userId);
     if (existing) {
       profile = existing;
+      console.log("[signUpService] Found existing profile");
     } else {
-      profile = await createProfile(userId, fullName, phone || null);
+      try {
+        profile = await createProfile(userId, fullName, phone || null, role);
+        console.log("[signUpService] Profile created on retry");
+      } catch (retryErr: any) {
+        console.error("[signUpService] Profile creation failed on retry:", retryErr.message);
+        throw new AppError(`Failed to create profile: ${retryErr.message}`, "DB_ERROR", 500);
+      }
     }
   }
 
-  const freePlan = await getFreePlan();
-  if (freePlan) {
-    const { error: subError } = await supabase.from("subscriptions").upsert({
-      user_id: userId,
-      plan_id: freePlan.id,
-      scans_limit: freePlan.scans_limit,
-      status: "active",
-      current_period_start: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+  // Assign free subscription plan
+  try {
+    const freePlan = await getFreePlan();
+    if (freePlan) {
+      const { error: subError } = await supabase.from("subscriptions").upsert({
+        user_id: userId,
+        plan_id: freePlan.id,
+        scans_limit: freePlan.scans_limit,
+        status: "active",
+        current_period_start: new Date().toISOString(),
+      }, { onConflict: "user_id" });
 
-    if (subError) {
-      console.error("Failed to create subscription:", subError);
+      if (subError) {
+        console.error("[signUpService] Failed to create subscription:", subError.message);
+      }
     }
+  } catch (subErr: any) {
+    console.error("[signUpService] Error setting up subscription:", subErr.message);
   }
 
+  // Sign in to get JWT token
+  console.log("[signUpService] Signing in to get token");
   const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
 
   if (signInError || !signInData.session) {
-    throw new AppError("Account created but sign-in failed", "AUTH_ERROR", 500);
+    throw new AppError("Account created but sign-in failed: " + (signInError?.message || "unknown"), "AUTH_ERROR", 500);
   }
 
   const subscription = await getUserSubscription(userId);
+  console.log("[signUpService] Signup completed");
 
   return {
     user: { id: userId, email: authData.user.email ?? null },
@@ -176,11 +200,15 @@ export async function getSessionService(token: string): Promise<AuthResponse> {
 
 async function getFreePlan(): Promise<{ id: string; scans_limit: number | null } | null> {
   const supabase = getSupabaseServerClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("subscription_plans")
     .select("id, scans_limit")
     .eq("name", "free")
     .single();
+  if (error) {
+    console.error("[getFreePlan] Failed to find free plan:", error.message);
+    return null;
+  }
   return data;
 }
 
