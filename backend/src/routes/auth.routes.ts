@@ -27,7 +27,7 @@ authRouter.post("/signup", async (req, res) => {
   } catch (error: any) {
     const status = error?.status ?? 400;
     const message = error?.message ?? (typeof error === "string" ? error : "Failed to sign up");
-    console.error("[POST /signup] Error:", error);
+    console.warn("[POST /signup] Error:", error?.message || error);
     res.status(status).json({ error: message });
   }
 });
@@ -46,7 +46,7 @@ authRouter.post("/signin", async (req, res) => {
   } catch (error: any) {
     const status = error?.status ?? 401;
     const message = error?.message ?? (typeof error === "string" ? error : "Invalid email or password");
-    console.error("[POST /signin] Error:", error);
+    console.warn("[POST /signin] Error:", error?.message || error);
     res.status(status).json({ error: message });
   }
 });
@@ -67,7 +67,7 @@ authRouter.post("/admin-signin", async (req, res) => {
   } catch (error: any) {
     const status = error?.status ?? 401;
     const message = error?.message ?? (typeof error === "string" ? error : "Invalid email or password");
-    console.error("[POST /admin-signin] Error:", error);
+    console.warn("[POST /admin-signin] Error:", error?.message || error);
     res.status(status).json({ error: message });
   }
 });

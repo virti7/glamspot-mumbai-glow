@@ -9,7 +9,7 @@ import {
   ChevronRight, ArrowUpRight, Wifi, Wind, Car, CreditCard,
   ShieldCheck, Scissors, Quote, Sparkles, Users, Check,
   ArrowLeft, Clock3, Calendar, MessageCircle, ImagePlus,
-  Crown,
+  Crown, Store, Loader2,
 } from "lucide-react";
 import type { SalonDetail } from "@/services/salon.service";
 import { salonService } from "@/services/salon.service";
@@ -99,10 +99,46 @@ interface Props {
 }
 
 export function SalonDetailClient({ salon }: Props) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isFavorite, setIsFavorite] = useState(false);
   const [similarSalons, setSimilarSalons] = useState<any[]>([]);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [claimStatus, setClaimStatus] = useState<string | null>(null);
+  const [claimLoading, setClaimLoading] = useState(false);
+
+  useEffect(() => {
+    if (!salon.is_claimed && user && profile?.role === "salon_owner") {
+      fetch("/api/salon-management/claims")
+        .then((r) => r.json())
+        .then((claims: any[]) => {
+          const c = claims.find((cl: any) => cl.salon_id === salon.id);
+          if (c) setClaimStatus(c.status);
+        })
+        .catch(() => {});
+    }
+  }, [salon.id, salon.is_claimed, user, profile]);
+
+  const handleClaimSalon = async () => {
+    if (!user) return;
+    setClaimLoading(true);
+    try {
+      const res = await fetch("/api/salon-management/claims", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ salonId: salon.id, verification_message: "" }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setClaimStatus("pending");
+      } else {
+        alert(data.error || "Failed to submit claim");
+      }
+    } catch {
+      alert("Failed to submit claim");
+    } finally {
+      setClaimLoading(false);
+    }
+  };
 
   const galleryImages = useMemo(() => {
     const images: string[] = [];
@@ -648,6 +684,39 @@ export function SalonDetailClient({ salon }: Props) {
                     Verified salon · Trusted by GlamSpot
                   </div>
                 )}
+                {(salon as any).owner_id ? (
+                  <div className="mt-5 pt-4 border-t border-gray-100 flex items-center gap-2 text-[12px] text-gray-500">
+                    <Crown size={14} className="text-amber-500" />
+                    Claimed by Verified Owner
+                  </div>
+                ) : user && profile?.role === "salon_owner" ? (
+                  <div className="mt-5 pt-4 border-t border-gray-100">
+                    {claimStatus === "pending" ? (
+                      <div className="flex items-center gap-2 text-[12px] text-amber-600">
+                        <Clock size={14} />
+                        Claim Pending — Awaiting admin review
+                      </div>
+                    ) : claimStatus === "approved" ? (
+                      <div className="flex items-center gap-2 text-[12px] text-green-600">
+                        <Crown size={14} />
+                        Claim Approved — Owned by You
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleClaimSalon}
+                        disabled={claimLoading}
+                        className="w-full py-2.5 rounded-full bg-[#FF4FA2] text-white text-[12px] font-semibold hover:bg-[#e63e8a] transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        {claimLoading ? (
+                          <Loader2 size={13} className="animate-spin" />
+                        ) : (
+                          <Store size={13} />
+                        )}
+                        {claimLoading ? "Submitting..." : "Claim This Salon"}
+                      </button>
+                    )}
+                  </div>
+                ) : null}
               </div>
             </div>
           </motion.aside>

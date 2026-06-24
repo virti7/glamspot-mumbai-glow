@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   LayoutDashboard, Calendar, Scissors, Users, Image, Star,
   UserCircle, BarChart3, Settings, LogOut, ChevronLeft, Menu,
-  Store, Clock, Shield,
+  Store, Clock, Shield, Loader2,
 } from "lucide-react";
 
 const sidebarLinks = [
@@ -28,17 +28,30 @@ export default function SalonDashboardLayout({ children }: { children: React.Rea
   const router = useRouter();
   const { profile, isSalonOwner, isAdmin, signOut, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ownershipVerified, setOwnershipVerified] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isSalonOwner) {
-      router.push("/dashboard");
+    if (!loading && !profile) {
+      router.push("/auth/login");
+      return;
     }
-  }, [loading, isSalonOwner, router]);
+    if (loading || !profile) return;
+    if (isAdmin) { setOwnershipVerified(true); return; }
+    fetch("/api/salons/owner")
+      .then((res) => {
+        if (res.status === 404) {
+          router.push("/?reason=ownership_removed");
+        } else {
+          setOwnershipVerified(true);
+        }
+      })
+      .catch(() => { setOwnershipVerified(true); });
+  }, [loading, profile, isAdmin, router]);
 
-  if (loading || !isSalonOwner) {
+  if (loading || !profile || !ownershipVerified) {
     return (
       <div className="min-h-screen bg-[#FAF8F6] flex items-center justify-center">
-        <div className="text-gray-400">Loading...</div>
+        <Loader2 size={22} className="animate-spin text-gray-300" />
       </div>
     );
   }

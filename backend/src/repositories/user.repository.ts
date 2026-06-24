@@ -32,22 +32,28 @@ export async function createProfile(
   const validRoles = ["customer", "salon_owner", "admin"];
   const safeRole = validRoles.includes(role) ? role : "customer";
 
+  const payload = { id: userId, full_name: fullName, phone, role: safeRole };
+  console.log("[createProfile] Inserting profile:", { userId, payload });
+
   const { data, error } = await supabase
     .from("profiles")
-    .insert({
-      id: userId,
-      full_name: fullName,
-      phone,
-      role: safeRole,
-    })
+    .insert(payload)
     .select("*")
     .single();
 
   if (error) {
-    console.error("[createProfile] Error:", error.message, error.code, error.details);
+    console.error("[createProfile] Insert failed:", {
+      userId,
+      payload,
+      errorMessage: error.message,
+      errorCode: error.code,
+      errorDetails: error.details,
+      errorHint: error.hint,
+    });
     throw new AppError(`Database error creating profile: ${error.message}`, "DB_ERROR", 500);
   }
 
+  console.log("[createProfile] Insert succeeded:", { userId, data });
   return data as Profile;
 }
 

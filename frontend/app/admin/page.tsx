@@ -14,7 +14,8 @@ import Link from "next/link";
 interface DashboardData {
   stats: {
     totalUsers: number; totalCustomers: number; totalSalonOwners: number;
-    totalSalons: number; claimedSalons: number; pendingClaims: number;
+    totalSalons: number; claimedSalons: number; unclaimedSalons: number;
+    activeOwners: number; pendingClaims: number;
     bookingsToday: number; bookingsThisMonth: number;
     totalRevenue: number; monthlyRevenue: number;
     totalReviews: number; averageRating: string;
@@ -62,6 +63,8 @@ export default function AdminPage() {
     { label: "Salon Owners", value: s?.totalSalonOwners ?? "—", icon: Store, color: "#8B5CF6", bg: "bg-purple-50", href: "/admin/users" },
     { label: "Total Salons", value: s?.totalSalons ?? "—", icon: ShoppingBag, color: "#F59E0B", bg: "bg-amber-50", href: "/admin/salons" },
     { label: "Claimed Salons", value: s?.claimedSalons ?? "—", icon: Crown, color: "#EC4899", bg: "bg-pink-50", href: "/admin/salons" },
+    { label: "Unclaimed Salons", value: s?.unclaimedSalons ?? "—", icon: Store, color: "#6B7280", bg: "bg-gray-100", href: "/admin/salons" },
+    { label: "Active Owners", value: s?.activeOwners ?? "—", icon: UserCheck, color: "#8B5CF6", bg: "bg-violet-50", href: "/admin/salon-owners" },
     { label: "Pending Claims", value: s?.pendingClaims ?? "—", icon: FileCheck, color: "#F43F5E", bg: "bg-rose-50", href: "/admin/claims" },
     { label: "Bookings Today", value: s?.bookingsToday ?? "—", icon: Calendar, color: "#6366F1", bg: "bg-indigo-50", href: "/admin/bookings" },
     { label: "Bookings This Month", value: s?.bookingsThisMonth ?? "—", icon: Clock, color: "#14B8A6", bg: "bg-teal-50", href: "/admin/bookings" },
@@ -87,6 +90,23 @@ export default function AdminPage() {
       </div>
 
       {error && <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">{error}</div>}
+
+      {data?.stats.pendingClaims ? (
+        <Link href="/admin/claims" className="block mb-6 p-4 rounded-xl bg-gradient-to-r from-rose-50 to-pink-50 border border-rose-200 hover:border-rose-300 transition">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center">
+              <AlertTriangle size={20} className="text-rose-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-[14px] font-bold text-rose-800">
+                {data.stats.pendingClaims} Pending Claim{data.stats.pendingClaims !== 1 ? "s" : ""} Require{data.stats.pendingClaims === 1 ? "s" : ""} Your Attention
+              </p>
+              <p className="text-[12px] text-rose-600">Click to review and approve/reject claim requests</p>
+            </div>
+            <ArrowUpRight size={18} className="text-rose-500 shrink-0" />
+          </div>
+        </Link>
+      ) : null}
 
       {loading && !data ? (
         <div className="flex items-center justify-center h-[40vh]"><Loader2 size={24} className="animate-spin text-gray-300" /></div>

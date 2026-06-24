@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { requireRole } from "../middleware/role.middleware";
 import { getSupabaseServerClient } from "../integrations/supabase/client";
+import { sendClaimNotification, sendClaimApproved, sendClaimRejected } from "../services/email.service";
 
 export const salonManagementRouter = Router();
 
@@ -20,25 +21,112 @@ async function getSalonId(userId: string): Promise<string | null> {
 // ── CLAIMS ──
 salonManagementRouter.post("/claims", authMiddleware, async (req, res) => {
   try {
+    console.log("Claim API hit");
+    console.log(req.body);
     const user = (req as any).user;
-    const { salonId } = req.body;
-    if (!salonId) { res.status(400).json({ error: "salonId is required" }); return; }
+    const { salonId, verification_message } = req.body;
+
+    if (!salonId) {
+      console.log("Claim error: salonId is required");
+      res.status(400).json({ error: "salonId is required" });
+      return;
+    }
+
     const supabase = getSupabaseServerClient();
+
+    console.log("Supabase user context");
+    await supabase.auth.getUser(
+      req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7) : undefined
+    ).then(({ data: d }) => console.log("auth.getUser().user:", d?.user?.id ?? "NULL"))
+     .catch((e) => console.log("auth.getUser() error:", e?.message));
+
+    // Detect if service_role key is actually being used (RLS bypass test)
+    const { error: rlsTest } = await supabase.from("salon_claims").select("id").limit(1).maybeSingle();
+    console.log("RLS bypass test:", rlsTest ? `BLOCKED (${rlsTest.message})` : "PASSED (service_role bypass)");
+
+    // Check for existing claim
     const { data: existing } = await supabase
       .from("salon_claims")
       .select("id, status")
       .eq("salon_id", salonId)
-      .eq("owner_id", user.id)
+      .eq("user_id", user.id)
       .maybeSingle();
-    if (existing) { res.status(409).json({ error: `Claim already exists (${existing.status})` }); return; }
+
+    if (existing) {
+      console.log("Claim already exists:", existing.status);
+      res.status(409).json({ error: `Claim already exists (${existing.status})` });
+      return;
+    }
+
+    // Get salon name and user profile details
+    const { data: salon } = await supabase
+      .from("salons")
+      .select("id, name, email, phone")
+      .eq("id", salonId)
+      .single();
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, email, phone")
+      .eq("id", user.id)
+      .single();
+
+    const salonName = salon?.name || "Unknown Salon";
+    const fullName = profile?.full_name || user.email || "Unknown";
+    const email = profile?.email || user.email || "";
+    const phone = profile?.phone || "";
+    const businessEmail = salon?.email || "";
+    const businessPhone = salon?.phone || "";
+
+    const payload = {
+      salon_id: salonId,
+      user_id: user.id,
+      salon_name: salonName,
+      full_name: fullName,
+      email: email,
+      phone: phone,
+      business_email: businessEmail,
+      business_phone: businessPhone,
+      verification_message: verification_message || "",
+      status: "pending",
+    };
+    console.log("CLAIM INSERT PAYLOAD");
+    console.log(payload);
     const { data, error } = await supabase
       .from("salon_claims")
-      .insert({ salon_id: salonId, owner_id: user.id })
+      .insert(payload)
       .select()
       .single();
-    if (error) { res.status(500).json({ error: error.message }); return; }
-    res.status(201).json(data);
-  } catch { res.status(500).json({ error: "Failed to submit claim" }); }
+
+    console.log("INSERT DATA", data);
+    console.log("INSERT ERROR", error);
+
+    if (error) {
+      throw error;
+    }
+
+    // Send email notification (non-blocking — won't fail the request)
+    try {
+      sendClaimNotification({
+        salonName,
+        salonId,
+        claimantName: fullName,
+        claimantEmail: email,
+        claimantPhone: phone,
+        verificationMessage: verification_message || "",
+        submittedDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
+        claimId: data.id,
+      });
+    } catch (emailErr) {
+      console.log("Email notification skipped (resend not configured):", emailErr);
+    }
+
+    res.status(201).json({ message: "Claim request submitted successfully. Our team will review it.", claim: data });
+  } catch (err) {
+    console.error("Claim submission error:", err);
+    const message = err?.message || String(err);
+    res.status(500).json({ error: message });
+  }
 });
 
 salonManagementRouter.get("/claims", authMiddleware, async (req, res) => {
@@ -48,19 +136,20 @@ salonManagementRouter.get("/claims", authMiddleware, async (req, res) => {
     const { data, error } = await supabase
       .from("salon_claims")
       .select("*, salon:salons(name, slug, locality, city, address)")
-      .eq("owner_id", user.id)
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) { res.status(500).json({ error: error.message }); return; }
+
     res.json(data ?? []);
   } catch { res.status(500).json({ error: "Failed to fetch claims" }); }
 });
 
-salonManagementRouter.get("/claims/pending", authMiddleware, requireRole(["admin"]), async (_req, res) => {
+salonManagementRouter.get("/claims/pending", authMiddleware, requireRole("admin"), async (_req, res) => {
   try {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("salon_claims")
-      .select("*, salon:salons(name, slug, locality, city, address, phone), owner:profiles(full_name, email, phone)")
+      .select("*, salon:salons(name, slug, locality, city, address, phone)")
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     if (error) { res.status(500).json({ error: error.message }); return; }
@@ -68,7 +157,7 @@ salonManagementRouter.get("/claims/pending", authMiddleware, requireRole(["admin
   } catch { res.status(500).json({ error: "Failed to fetch pending claims" }); }
 });
 
-salonManagementRouter.put("/claims/:id/approve", authMiddleware, requireRole(["admin"]), async (req, res) => {
+salonManagementRouter.put("/claims/:id/approve", authMiddleware, requireRole("admin"), async (req, res) => {
   try {
     const admin = (req as any).user;
     const supabase = getSupabaseServerClient();
@@ -80,37 +169,87 @@ salonManagementRouter.put("/claims/:id/approve", authMiddleware, requireRole(["a
     if (!claim) { res.status(404).json({ error: "Claim not found" }); return; }
     if (claim.status !== "pending") { res.status(400).json({ error: "Claim already processed" }); return; }
 
+    const now = new Date().toISOString();
+
     const { error: claimErr } = await supabase
       .from("salon_claims")
-      .update({ status: "approved", admin_id: admin.id, updated_at: new Date().toISOString() })
+      .update({ status: "approved", approved_by: admin.id, approved_at: now, updated_at: now })
       .eq("id", req.params.id);
     if (claimErr) { res.status(500).json({ error: claimErr.message }); return; }
 
     const { error: salonErr } = await supabase
       .from("salons")
-      .update({ owner_id: claim.owner_id })
+      .update({ owner_id: claim.user_id, is_claimed: true, claimed_at: now })
       .eq("id", claim.salon_id);
     if (salonErr) { res.status(500).json({ error: salonErr.message }); return; }
 
     const { error: profileErr } = await supabase
       .from("profiles")
       .update({ role: "salon_owner" })
-      .eq("id", claim.owner_id);
+      .eq("id", claim.user_id);
     if (profileErr) { res.status(500).json({ error: profileErr.message }); return; }
 
-    res.json({ message: `Salon "${claim.salon.name}" approved and assigned` });
+    await supabase.from("salon_owner_history").insert({
+      salon_id: claim.salon_id,
+      old_owner_id: null,
+      new_owner_id: claim.user_id,
+      action: "claim",
+      performed_by_admin_id: admin.id,
+    });
+
+    await supabase
+      .from("salon_claims")
+      .update({ status: "rejected", rejected_by: admin.id, rejected_at: now, updated_at: now })
+      .eq("salon_id", claim.salon_id)
+      .neq("id", req.params.id)
+      .eq("status", "pending");
+
+    console.log(`Claim ${req.params.id} approved via salon-management route`);
+
+    try {
+      sendClaimApproved({
+        email: claim.email || "",
+        salonName: claim.salon_name || claim.salon?.name || "Salon",
+        ownerName: claim.full_name || "Owner",
+      });
+    } catch (emailErr) {
+      console.log("Approval email skipped:", emailErr);
+    }
+
+    res.json({ message: `Salon "${claim.salon_name || claim.salon?.name}" approved and assigned` });
   } catch { res.status(500).json({ error: "Failed to approve claim" }); }
 });
 
-salonManagementRouter.put("/claims/:id/reject", authMiddleware, requireRole(["admin"]), async (req, res) => {
+salonManagementRouter.put("/claims/:id/reject", authMiddleware, requireRole("admin"), async (req, res) => {
   try {
     const admin = (req as any).user;
     const supabase = getSupabaseServerClient();
+    const { data: claim } = await supabase
+      .from("salon_claims")
+      .select("*, salon:salons(name)")
+      .eq("id", req.params.id)
+      .single();
+
     const { error } = await supabase
       .from("salon_claims")
-      .update({ status: "rejected", admin_id: admin.id, notes: req.body.notes || null, updated_at: new Date().toISOString() })
+      .update({ status: "rejected", rejected_by: admin.id, rejected_at: new Date().toISOString(), updated_at: new Date().toISOString() })
       .eq("id", req.params.id);
     if (error) { res.status(500).json({ error: error.message }); return; }
+
+    console.log(`Claim ${req.params.id} rejected via salon-management route`);
+
+    if (claim) {
+      try {
+        sendClaimRejected({
+          email: claim.email || "",
+          salonName: claim.salon_name || claim.salon?.name || "Salon",
+          ownerName: claim.full_name || "Owner",
+        });
+      } catch (emailErr) {
+        console.log("Rejection email skipped:", emailErr);
+      }
+    }
+
     res.json({ message: "Claim rejected" });
   } catch { res.status(500).json({ error: "Failed to reject claim" }); }
 });

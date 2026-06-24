@@ -159,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push("/dashboard");
       }
     } catch (error: any) {
-      console.error("Signup error:", error);
       throw error;
     } finally {
       setLoading(false);

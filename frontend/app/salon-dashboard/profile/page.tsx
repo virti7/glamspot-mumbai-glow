@@ -15,6 +15,11 @@ interface Claim {
   salon: { name: string; slug: string; locality: string; city: string } | null;
 }
 
+interface ClaimResult {
+  message: string;
+  claim: Claim;
+}
+
 interface SearchResult {
   id: string;
   name: string;
@@ -45,9 +50,12 @@ export default function SalonProfilePage() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [claimModal, setClaimModal] = useState<SearchResult | null>(null);
+  const [verificationMsg, setVerificationMsg] = useState("");
+  const [claimSuccess, setClaimSuccess] = useState("");
 
   useEffect(() => {
-    if (!profile || profile.role !== "salon_owner") return;
+    if (!profile) return;
     loadData();
   }, [profile]);
 
@@ -73,13 +81,15 @@ export default function SalonProfilePage() {
         cover_image: s.cover_image || "",
         logo_image: s.logo_image || "",
       });
-    } catch {
-      setError("No salon found");
+    } catch (err) {
+      console.warn("No salon found for owner, loading claims instead:", err?.message || err);
       // Load claims
       try {
         const c = await api.get<Claim[]>("/salon-management/claims");
         setClaims(c);
-      } catch { /* ignore */ }
+      } catch (claimsErr) {
+        console.warn("Failed to load claims:", claimsErr?.message || claimsErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -122,19 +132,30 @@ export default function SalonProfilePage() {
     try {
       const res = await api.get<SearchResult[]>(`/salon-management/search?q=${encodeURIComponent(q)}`);
       setSearchResults(res);
-    } catch { /* ignore */ } finally { setSearching(false); }
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally { setSearching(false); }
   };
 
-  const handleClaim = async (salonId: string) => {
+  const handleClaim = async (salonId: string, message: string) => {
+    const payload = { salonId, verification_message: message };
     setClaiming(true);
     try {
-      await api.post("/salon-management/claims", { salonId });
+      const result = await api.post<ClaimResult>("/salon-management/claims", payload);
+      setClaimSuccess("Claim request submitted successfully. Awaiting admin review.");
       setSearchQuery("");
       setSearchResults([]);
+      setClaimModal(null);
+      setVerificationMsg("");
       const c = await api.get<Claim[]>("/salon-management/claims");
       setClaims(c);
-    } catch {
-      setError("Failed to submit claim");
+      setTimeout(() => setClaimSuccess(""), 5000);
+    } catch (err: any) {
+      let message = "Failed to submit claim";
+      if (err?.message) message = err.message;
+      else if (typeof err === "string") message = err;
+      else if (err?.error) message = err.error;
+      setError(message);
     } finally { setClaiming(false); }
   };
 
@@ -191,6 +212,12 @@ export default function SalonProfilePage() {
             </div>
           )}
 
+          {claimSuccess && (
+            <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px] font-medium">
+              {claimSuccess}
+            </div>
+          )}
+
           {hasPendingClaim ? (
             <div className="text-center py-8 bg-white rounded-2xl border border-[#E8E8E8]">
               <Clock size={32} className="mx-auto text-amber-500 mb-3" />
@@ -219,11 +246,11 @@ export default function SalonProfilePage() {
                         <p className="text-[12px] text-[#6B7280]">{s.locality}, {s.city}</p>
                       </div>
                       <button
-                        onClick={() => handleClaim(s.id)}
+                        onClick={() => setClaimModal(s)}
                         disabled={claiming}
                         className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#EC4899] text-white text-[12px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50"
                       >
-                        {claiming ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle size={12} />}
+                        <CheckCircle size={12} />
                         Claim
                       </button>
                     </div>
@@ -233,6 +260,39 @@ export default function SalonProfilePage() {
               {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
                 <p className="text-[13px] text-[#6B7280] mt-3">No unclaimed salons found matching "{searchQuery}".</p>
               )}
+            </div>
+          )}
+
+          {claimModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setClaimModal(null); setVerificationMsg(""); }}>
+              <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <h3 className="font-bold text-[16px] text-[#111] mb-1">Claim {claimModal.name}</h3>
+                <p className="text-[13px] text-gray-500 mb-1">{claimModal.locality}, {claimModal.city}</p>
+                <p className="text-[12px] text-gray-400 mb-4">Provide a brief verification message to help us confirm your ownership.</p>
+                <textarea
+                  value={verificationMsg}
+                  onChange={(e) => setVerificationMsg(e.target.value)}
+                  placeholder="e.g., I am the owner of this salon and have all business documents..."
+                  rows={4}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30 resize-none mb-4"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
+                    className="px-4 py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleClaim(claimModal.id, verificationMsg)}
+                    disabled={claiming}
+                    className="px-4 py-2 rounded-xl bg-[#EC4899] text-white text-[12px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {claiming ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+                    {claiming ? "Submitting..." : "Submit Claim"}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </main>

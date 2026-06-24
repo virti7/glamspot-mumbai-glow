@@ -39,7 +39,7 @@ export default function SalonDashboardPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!profile || profile.role !== "salon_owner") return;
+    if (!profile) { setLoading(false); return; }
     const load = async () => {
       try {
         const [salonData, statsData, chartRes] = await Promise.all([
@@ -73,7 +73,7 @@ export default function SalonDashboardPage() {
         <Store size={48} className="mx-auto text-gray-300 mb-4" />
         <h2 className="font-display text-[20px] font-bold text-[#111] mb-2">No Salon Found</h2>
         <p className="text-gray-400 text-[14px] mb-6 max-w-md mx-auto">
-          {error}. If you recently submitted a claim, please wait for admin approval.
+          You don&apos;t own any salons yet. Search for your salon and submit an ownership claim.
         </p>
         <Link
           href="/salon-dashboard/profile"

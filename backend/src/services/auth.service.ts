@@ -1,4 +1,6 @@
+import { createClient } from "@supabase/supabase-js";
 import { getSupabaseServerClient } from "../integrations/supabase/client";
+import { config } from "../config/env";
 import { getProfile, createProfile } from "../repositories/user.repository";
 import { AppError, UnauthorizedError } from "@glamspot/shared/schemas";
 
@@ -45,7 +47,7 @@ export async function signUpService(
   });
 
   if (authError || !authData.user) {
-    console.error("[signUpService] Auth user creation failed:", authError?.message);
+    console.warn("[signUpService] Auth user creation failed:", authError?.message);
     throw new AppError(authError?.message || "Failed to create account", "AUTH_ERROR", 400);
   }
 
@@ -95,9 +97,12 @@ export async function signUpService(
     console.error("[signUpService] Error setting up subscription:", subErr.message);
   }
 
-  // Sign in to get JWT token
+  // Sign in to get JWT token (using a throwaway client to avoid polluting the singleton's auth state)
   console.log("[signUpService] Signing in to get token");
-  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+  const signInClient = createClient(config.supabase.url, config.supabase.anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data: signInData, error: signInError } = await signInClient.auth.signInWithPassword({
     email,
     password,
   });
@@ -128,9 +133,12 @@ export async function signInService(
   email: string,
   password: string,
 ): Promise<AuthResponse> {
-  const supabase = getSupabaseServerClient();
+  // Use a throwaway client for sign-in to avoid polluting the service_role singleton
+  const signInClient = createClient(config.supabase.url, config.supabase.anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await signInClient.auth.signInWithPassword({
     email,
     password,
   });

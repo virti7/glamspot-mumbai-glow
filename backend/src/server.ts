@@ -64,6 +64,8 @@ app.use("/api/uploads", uploadRouter);
 app.use("/api/salon-management", salonManagementRouter);
 app.use("/api/admin", adminRouter);
 
+
+
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
