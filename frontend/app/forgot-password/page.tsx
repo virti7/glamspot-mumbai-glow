@@ -21,6 +21,7 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
+      if (!supabaseClient) throw new Error("Authentication service unavailable");
       const { error: resetError } = await supabaseClient.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });

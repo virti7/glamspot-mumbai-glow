@@ -80,6 +80,7 @@ export async function getSalons(params: {
   }
 
   query = query.order("rating", { ascending: false })
+    .order("reviews_count", { ascending: false })
     .range(offset, offset + limit - 1);
 
   const { data, error, count } = await query;

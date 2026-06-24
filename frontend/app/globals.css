@@ -200,6 +200,16 @@
   animation: goldShimmer 3s ease infinite;
 }
 
+@keyframes floatSlow { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-8px)} }
+.float-slow { animation: floatSlow 3s ease-in-out infinite; }
+
+@keyframes shimmerPink { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+.shimmer-pink {
+  background: linear-gradient(90deg, transparent 0%, rgba(236,72,153,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmerPink 2.5s linear infinite;
+}
+
 @keyframes bannerShimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(100%)} }
 .banner-shimmer::after {
   content: '';

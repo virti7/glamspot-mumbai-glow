@@ -5,8 +5,11 @@ export interface Salon {
   name: string;
   slug: string;
   description: string | null;
+  phone: string | null;
+  address: string | null;
   locality: string | null;
   city: string;
+  state: string | null;
   rating: number;
   reviews_count: number;
   price_min: number | null;
@@ -16,6 +19,7 @@ export interface Salon {
   amenities: string[];
   tags: string[];
   is_verified: boolean;
+  is_active: boolean;
   opening_time: string | null;
   closing_time: string | null;
 }

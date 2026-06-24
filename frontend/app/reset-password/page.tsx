@@ -16,6 +16,7 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
+    if (!supabaseClient) return;
     supabaseClient.auth.onAuthStateChange(async (event) => {
       if (event === "PASSWORD_RECOVERY") {
         // User is authenticated for password reset
@@ -42,6 +43,7 @@ export default function ResetPasswordPage() {
 
     setLoading(true);
     try {
+      if (!supabaseClient) throw new Error("Authentication service unavailable");
       const { error: updateError } = await supabaseClient.auth.updateUser({ password });
       if (updateError) throw updateError;
       setSuccess(true);
