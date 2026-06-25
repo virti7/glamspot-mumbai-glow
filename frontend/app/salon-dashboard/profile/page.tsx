@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { salonService, type Salon } from "@/services/salon.service";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { Store, Search, CheckCircle, Clock, Loader2, ChevronRight } from "lucide-react";
+import { Store, Search, CheckCircle, Clock, Loader2, ChevronRight, Sparkles, MapPin, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Claim {
   id: string;
@@ -163,7 +165,15 @@ export default function SalonProfilePage() {
     return (
       <div className="min-h-screen bg-[#FAF8F6]">
         <DashboardHeader />
-        <div className="flex items-center justify-center h-[60vh]"><div className="text-gray-400">Loading profile...</div></div>
+        <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+          <div className="space-y-6">
+            <Skeleton className="h-[300px] w-full rounded-[28px] bg-pink-100/50" />
+            <div className="bg-white rounded-[22px] p-6 sm:p-8 space-y-4 shadow-[0_10px_40px_rgba(0,0,0,0.06)]">
+              <Skeleton className="h-7 w-48 bg-pink-100/50" />
+              <Skeleton className="h-14 w-full rounded-full bg-pink-100/50" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -176,126 +186,316 @@ export default function SalonProfilePage() {
     return (
       <div className="min-h-screen bg-[#FAF8F6]">
         <DashboardHeader />
-        <main className="max-w-3xl mx-auto px-6 py-8">
-          <div className="text-center py-10">
-            <Store size={48} className="mx-auto text-gray-300 mb-4" />
-            <h2 className="font-display text-[20px] font-bold text-[#111] mb-2">Claim Your Salon</h2>
-            <p className="text-[#6B7280] text-[14px] mb-8 max-w-md mx-auto">
-              Search for your salon in our directory to claim ownership.
-            </p>
-          </div>
+        <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
 
-          {approvedClaim && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-[13px] text-green-700 mb-6">
-              Your claim for <strong>{approvedClaim.salon?.name}</strong> has been approved! Please refresh the page.
-            </div>
-          )}
+          {/* ── Hero Section ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-pink-50 via-pink-100/40 to-purple-50/60 p-8 sm:p-10 md:p-12"
+          >
+            {/* Decorative floating elements */}
+            <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-gradient-to-br from-pink-200/30 to-purple-200/20 blur-3xl" />
+            <div className="absolute -bottom-16 -right-16 w-56 h-56 rounded-full bg-pink-100/40 blur-2xl" />
+            <div className="absolute top-8 right-12 w-4 h-4 rounded-full bg-pink-300/50 glam-float1" />
+            <div className="absolute top-20 right-24 w-3 h-3 rounded-full bg-purple-300/40 glam-float2" />
+            <div className="absolute bottom-12 left-1/3 w-5 h-5 rounded-full bg-pink-200/50 glam-float3" />
 
-          {claims.length > 0 && (
-            <div className="mb-8 space-y-3">
-              <h3 className="font-semibold text-[14px] text-[#111]">Your Claims</h3>
-              {claims.map((c) => (
-                <div key={c.id} className="bg-white rounded-xl p-4 border border-gray-100 flex items-center justify-between">
-                  <div>
-                    <p className="text-[14px] font-medium text-[#111]">{c.salon?.name || "Unknown Salon"}</p>
-                    <p className="text-[12px] text-[#6B7280]">{c.salon?.locality}, {c.salon?.city}</p>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+              {/* Left - Decorative Illustration */}
+              <div className="hidden md:flex items-center justify-center w-44 h-44 rounded-2xl bg-white/70 backdrop-blur-sm shadow-[0_8px_32px_rgba(236,72,153,0.12)]">
+                <div className="relative">
+                  <Store size={60} className="text-[#EC4899]/70" />
+                  <div className="absolute -top-2 -right-2">
+                    <Sparkles size={18} className="text-[#EC4899]" />
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[11px] font-medium border ${
-                    c.status === "approved" ? "bg-green-50 text-green-700 border-green-200" :
-                    c.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
-                    "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}>
-                    {c.status}
-                  </span>
                 </div>
-              ))}
+              </div>
+
+              {/* Right - Content */}
+              <div className="flex-1 text-center md:text-left">
+                <h1 className="font-display text-3xl sm:text-4xl md:text-[40px] font-bold text-[#111827] leading-tight">
+                  Claim Your Salon
+                </h1>
+                <p className="mt-4 text-[15px] sm:text-[16px] text-[#6B7280] max-w-lg mx-auto md:mx-0 leading-relaxed">
+                  Search your salon in our directory to claim ownership and start managing bookings, staff and customers.
+                </p>
+              </div>
             </div>
+          </motion.div>
+
+          {/* ── Approved Banner ── */}
+          <AnimatePresence>
+            {approvedClaim && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                className="overflow-hidden rounded-[22px] bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={18} className="text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-[14px] font-medium text-green-800">
+                      Claim Approved for <strong>{approvedClaim.salon?.name}</strong>
+                    </p>
+                    <p className="text-[12px] text-green-600 mt-0.5">Please refresh the page to access your salon dashboard.</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Claim Success Banner ── */}
+          <AnimatePresence>
+            {claimSuccess && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                className="overflow-hidden rounded-[22px] bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle size={18} className="text-green-600" />
+                  </div>
+                  <p className="text-[14px] font-medium text-green-800">{claimSuccess}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* ── Existing Claims ── */}
+          {claims.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <h2 className="text-[18px] font-bold text-[#111827] mb-4">Your Claims</h2>
+              <div className="space-y-3">
+                {claims.map((c, i) => (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 + i * 0.05 }}
+                    className="bg-white rounded-[22px] p-5 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#F3F4F6]"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+                        <Store size={18} className="text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="text-[14px] font-semibold text-[#111827]">{c.salon?.name || "Unknown Salon"}</p>
+                        <p className="text-[12px] text-[#6B7280]">{c.salon?.locality}{c.salon?.city ? `, ${c.salon.city}` : ''}</p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1.5 rounded-full text-[11px] font-semibold leading-none border ${
+                      c.status === "approved" ? "bg-green-50 text-green-700 border-green-200" :
+                      c.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
+                      "bg-amber-50 text-amber-700 border-amber-200"
+                    }`}>
+                      {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
           )}
 
-          {claimSuccess && (
-            <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px] font-medium">
-              {claimSuccess}
-            </div>
-          )}
-
+          {/* ── Pending or Search ── */}
           {hasPendingClaim ? (
-            <div className="text-center py-8 bg-white rounded-2xl border border-[#E8E8E8]">
-              <Clock size={32} className="mx-auto text-amber-500 mb-3" />
-              <h3 className="font-semibold text-[#111] text-[16px] mb-1">Claim Pending</h3>
-              <p className="text-[13px] text-[#6B7280]">Your claim is under review. You will be notified once approved.</p>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-[22px] p-10 sm:p-12 text-center shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-[#F3F4F6]"
+            >
+              <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-5">
+                <Clock size={32} className="text-amber-500" />
+              </div>
+              <h3 className="text-[20px] font-bold text-[#111827] mb-2">Claim Pending</h3>
+              <p className="text-[14px] text-[#6B7280] max-w-sm mx-auto leading-relaxed">
+                Your claim is under review. You will be notified once approved.
+              </p>
+            </motion.div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#E8E8E8] p-6">
-              <h3 className="font-semibold text-[15px] text-[#111] mb-4">Search for your salon</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-[22px] p-6 sm:p-8 shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-[#F3F4F6]"
+            >
+              <h3 className="text-[16px] font-bold text-[#111827] mb-5">Search for your salon</h3>
               <div className="relative">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  placeholder="Type your salon name..."
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30"
+                  placeholder="Search by salon name..."
+                  className="w-full h-14 pl-12 pr-6 rounded-full border border-[#F3F4F6] bg-[#FAF8F6] text-[14px] text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 transition-all"
                 />
               </div>
-              {searching && <p className="text-[12px] text-[#6B7280] mt-2">Searching...</p>}
-              {searchResults.length > 0 && (
-                <div className="mt-3 space-y-2 max-h-60 overflow-y-auto">
-                  {searchResults.map((s) => (
-                    <div key={s.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 border border-gray-100">
-                      <div>
-                        <p className="text-[14px] font-medium text-[#111]">{s.name}</p>
-                        <p className="text-[12px] text-[#6B7280]">{s.locality}, {s.city}</p>
-                      </div>
-                      <button
-                        onClick={() => setClaimModal(s)}
-                        disabled={claiming}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#EC4899] text-white text-[12px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50"
-                      >
-                        <CheckCircle size={12} />
-                        Claim
-                      </button>
-                    </div>
-                  ))}
+
+              {/* Searching indicator */}
+              {searching && (
+                <div className="flex items-center gap-2 mt-4 text-[13px] text-[#6B7280]">
+                  <Loader2 size={14} className="animate-spin" />
+                  Searching salons...
                 </div>
               )}
+
+              {/* Search Results */}
+              <AnimatePresence>
+                {searchResults.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mt-5 space-y-3"
+                  >
+                    {searchResults.map((s, i) => (
+                      <motion.div
+                        key={s.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="group flex items-center gap-4 p-4 bg-white rounded-[22px] border border-[#F3F4F6] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300"
+                      >
+                        {/* Salon Image Placeholder */}
+                        <div className="w-[100px] h-[80px] sm:w-[120px] sm:h-[90px] rounded-[16px] bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          <Store size={28} className="text-pink-300/70" />
+                        </div>
+
+                        {/* Salon Info */}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-[15px] sm:text-[16px] font-bold text-[#111827] truncate">{s.name}</h4>
+                          <div className="flex items-center gap-1.5 mt-1 text-[12px] text-[#6B7280]">
+                            <MapPin size={12} className="flex-shrink-0" />
+                            <span className="truncate">{s.address || `${s.locality}, ${s.city}`}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-pink-50 text-[#EC4899] border border-pink-100">
+                              <CheckCircle size={10} />
+                              Unclaimed
+                            </span>
+                            {s.locality && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                                {s.locality}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Claim Button */}
+                        <button
+                          onClick={() => setClaimModal(s)}
+                          disabled={claiming}
+                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[13px] font-semibold shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_6px_25px_rgba(236,72,153,0.4)] hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                        >
+                          <CheckCircle size={14} />
+                          Claim
+                        </button>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Empty State */}
               {searchQuery.length >= 2 && !searching && searchResults.length === 0 && (
-                <p className="text-[13px] text-[#6B7280] mt-3">No unclaimed salons found matching "{searchQuery}".</p>
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-8 text-center py-8"
+                >
+                  <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
+                    <Store size={36} className="text-gray-300" />
+                  </div>
+                  <h4 className="text-[18px] font-bold text-[#111827] mb-1">No salons found</h4>
+                  <p className="text-[14px] text-[#6B7280]">
+                    Try searching using another salon name.
+                  </p>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           )}
 
-          {claimModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setClaimModal(null); setVerificationMsg(""); }}>
-              <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <h3 className="font-bold text-[16px] text-[#111] mb-1">Claim {claimModal.name}</h3>
-                <p className="text-[13px] text-gray-500 mb-1">{claimModal.locality}, {claimModal.city}</p>
-                <p className="text-[12px] text-gray-400 mb-4">Provide a brief verification message to help us confirm your ownership.</p>
-                <textarea
-                  value={verificationMsg}
-                  onChange={(e) => setVerificationMsg(e.target.value)}
-                  placeholder="e.g., I am the owner of this salon and have all business documents..."
-                  rows={4}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[13px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30 resize-none mb-4"
-                />
-                <div className="flex gap-2 justify-end">
-                  <button
-                    onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
-                    className="px-4 py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => handleClaim(claimModal.id, verificationMsg)}
-                    disabled={claiming}
-                    className="px-4 py-2 rounded-xl bg-[#EC4899] text-white text-[12px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50 flex items-center gap-1.5"
-                  >
-                    {claiming ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
-                    {claiming ? "Submitting..." : "Submit Claim"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+          {/* ── Claim Modal ── */}
+          <AnimatePresence>
+            {claimModal && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
+                  className="bg-white rounded-[24px] p-6 sm:p-8 w-full max-w-lg shadow-[0_25px_60px_rgba(0,0,0,0.15)]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                        <Store size={22} className="text-[#EC4899]" />
+                      </div>
+                      <div>
+                        <h3 className="text-[18px] font-bold text-[#111827]">Claim {claimModal.name}</h3>
+                        <p className="text-[13px] text-[#6B7280]">{claimModal.locality}, {claimModal.city}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
+                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+                    >
+                      <X size={15} className="text-gray-500" />
+                    </button>
+                  </div>
+
+                  <div className="border-t border-[#F3F4F6] pt-5">
+                    <label className="block text-[13px] font-medium text-[#6B7280] mb-2">
+                      Verification Message
+                    </label>
+                    <p className="text-[12px] text-gray-400 mb-3">Provide a brief verification message to help us confirm your ownership.</p>
+                    <textarea
+                      value={verificationMsg}
+                      onChange={(e) => setVerificationMsg(e.target.value)}
+                      placeholder="e.g., I am the owner of this salon and have all business documents..."
+                      rows={4}
+                      className="w-full px-4 py-3 rounded-[16px] border border-[#F3F4F6] bg-[#FAF8F6] text-[13px] text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 resize-none transition-all"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[#F3F4F6]">
+                    <button
+                      onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
+                      className="px-5 py-2.5 rounded-full border border-[#F3F4F6] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleClaim(claimModal.id, verificationMsg)}
+                      disabled={claiming}
+                      className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[13px] font-semibold shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_6px_25px_rgba(236,72,153,0.4)] hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      {claiming ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
+                      {claiming ? "Submitting..." : "Submit Claim"}
+                    </button>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     );
   }

@@ -194,10 +194,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             <div className="hidden lg:flex items-center gap-2">
               <div className="relative">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   placeholder="Search anything..."
-                  className="w-64 pl-9 pr-4 py-1.5 rounded-lg border border-gray-200 text-[13px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 bg-gray-50"
+                  className="w-64 pl-10 pr-4 py-2 rounded-lg border border-gray-200 text-[13px] text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300 bg-gray-50"
                 />
               </div>
             </div>
