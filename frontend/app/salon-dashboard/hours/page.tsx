@@ -83,13 +83,13 @@ export default function BusinessHoursPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-[#111] text-2xl md:text-3xl font-bold">Business Hours</h1>
-          <p className="text-[#6B7280] text-[14px] mt-1">{openDays} days open · Set your weekly schedule</p>
+          <h1 className="font-display text-[#111827] text-2xl md:text-3xl font-bold">Business Hours</h1>
+          <p className="text-[#6B7280] text-sm mt-1">{openDays} days open · Set your weekly schedule</p>
         </div>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#EC4899] text-white text-[13px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#EC4899] text-white text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25 disabled:opacity-50"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           {saving ? "Saving..." : "Save Hours"}
@@ -103,9 +103,9 @@ export default function BusinessHoursPage() {
         <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px]">{success}</div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-        <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-          <div className="grid grid-cols-12 gap-4 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 overflow-hidden shadow-sm">
+        <div className="p-5 border-b border-[#E5E7EB]/60 bg-[#FAFAFB]">
+          <div className="grid grid-cols-12 gap-4 text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide">
             <div className="col-span-3">Day</div>
             <div className="col-span-2 text-center">Status</div>
             <div className="col-span-3 text-center">Open</div>
@@ -113,14 +113,14 @@ export default function BusinessHoursPage() {
             <div className="col-span-1" />
           </div>
         </div>
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-[#F3F4F6]">
           {DAYS.map((day) => {
             const h = hours.find((x) => x.day_of_week === day.index)!;
             const isToday = new Date().getDay() === day.index;
             return (
               <div key={day.index} className={`grid grid-cols-12 gap-4 items-center p-4 ${isToday ? "bg-[#EC4899]/5" : ""}`}>
                 <div className="col-span-3">
-                  <span className={`text-[14px] font-medium ${isToday ? "text-[#EC4899]" : "text-[#111]"}`}>
+                  <span className={`text-[14px] font-medium ${isToday ? "text-[#EC4899]" : "text-[#111827]"}`}>
                     {day.full}
                   </span>
                   {isToday && <span className="ml-2 text-[10px] font-bold text-[#EC4899]">TODAY</span>}
@@ -128,10 +128,10 @@ export default function BusinessHoursPage() {
                 <div className="col-span-2 flex justify-center">
                   <button
                     onClick={() => updateDay(day.index, "is_closed", !h.is_closed)}
-                    className={`px-3 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition-all ${
                       h.is_closed
-                        ? "bg-red-50 text-red-500 border-red-200"
-                        : "bg-green-50 text-green-600 border-green-200"
+                        ? "bg-red-50 text-red-500 border border-red-200"
+                        : "bg-green-50 text-green-600 border border-green-200"
                     }`}
                   >
                     {h.is_closed ? "Closed" : "Open"}
@@ -139,30 +139,30 @@ export default function BusinessHoursPage() {
                 </div>
                 <div className="col-span-3 flex justify-center">
                   {h.is_closed ? (
-                    <span className="text-[13px] text-gray-300">—</span>
+                    <span className="text-[13px] text-[#9CA3AF]">—</span>
                   ) : (
                     <input
                       type="time"
                       value={h.open_time}
                       onChange={(e) => updateDay(day.index, "open_time", e.target.value)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-[13px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30 w-[110px]"
+                      className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-[110px]"
                     />
                   )}
                 </div>
                 <div className="col-span-3 flex justify-center">
                   {h.is_closed ? (
-                    <span className="text-[13px] text-gray-300">—</span>
+                    <span className="text-[13px] text-[#9CA3AF]">—</span>
                   ) : (
                     <input
                       type="time"
                       value={h.close_time}
                       onChange={(e) => updateDay(day.index, "close_time", e.target.value)}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-[13px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30 w-[110px]"
+                      className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-[110px]"
                     />
                   )}
                 </div>
                 <div className="col-span-1 flex justify-center">
-                  {h.is_closed ? <Moon size={14} className="text-gray-300" /> : <Sun size={14} className="text-amber-400" />}
+                  {h.is_closed ? <Moon size={14} className="text-[#9CA3AF]" /> : <Sun size={14} className="text-amber-400" />}
                 </div>
               </div>
             );

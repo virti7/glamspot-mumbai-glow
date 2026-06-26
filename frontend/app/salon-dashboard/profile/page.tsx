@@ -163,14 +163,14 @@ export default function SalonProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F6]">
+      <div>
         <DashboardHeader />
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <div className="space-y-6">
-            <Skeleton className="h-[300px] w-full rounded-[28px] bg-pink-100/50" />
-            <div className="bg-white rounded-[22px] p-6 sm:p-8 space-y-4 shadow-[0_10px_40px_rgba(0,0,0,0.06)]">
-              <Skeleton className="h-7 w-48 bg-pink-100/50" />
-              <Skeleton className="h-14 w-full rounded-full bg-pink-100/50" />
+            <div className="h-[300px] w-full rounded-2xl animate-pulse bg-[#F3F4F6]" />
+            <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-6 sm:p-8 space-y-4 shadow-sm">
+              <div className="h-7 w-48 animate-pulse rounded-xl bg-[#F3F4F6]" />
+              <div className="h-14 w-full animate-pulse rounded-xl bg-[#F3F4F6]" />
             </div>
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function SalonProfilePage() {
     const approvedClaim = claims.find((c) => c.status === "approved");
 
     return (
-      <div className="min-h-screen bg-[#FAF8F6]">
+      <div>
         <DashboardHeader />
         <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
 
@@ -193,14 +193,11 @@ export default function SalonProfilePage() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-pink-50 via-pink-100/40 to-purple-50/60 p-8 sm:p-10 md:p-12"
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-pink-50 via-pink-100/40 to-purple-50/60 p-8 sm:p-10 md:p-12"
           >
             {/* Decorative floating elements */}
             <div className="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-gradient-to-br from-pink-200/30 to-purple-200/20 blur-3xl" />
             <div className="absolute -bottom-16 -right-16 w-56 h-56 rounded-full bg-pink-100/40 blur-2xl" />
-            <div className="absolute top-8 right-12 w-4 h-4 rounded-full bg-pink-300/50 glam-float1" />
-            <div className="absolute top-20 right-24 w-3 h-3 rounded-full bg-purple-300/40 glam-float2" />
-            <div className="absolute bottom-12 left-1/3 w-5 h-5 rounded-full bg-pink-200/50 glam-float3" />
 
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
               {/* Left - Decorative Illustration */}
@@ -232,7 +229,7 @@ export default function SalonProfilePage() {
                 initial={{ opacity: 0, y: -8, height: 0 }}
                 animate={{ opacity: 1, y: 0, height: "auto" }}
                 exit={{ opacity: 0, y: -8, height: 0 }}
-                className="overflow-hidden rounded-[22px] bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
+                className="overflow-hidden rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -256,7 +253,7 @@ export default function SalonProfilePage() {
                 initial={{ opacity: 0, y: -8, height: 0 }}
                 animate={{ opacity: 1, y: 0, height: "auto" }}
                 exit={{ opacity: 0, y: -8, height: 0 }}
-                className="overflow-hidden rounded-[22px] bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
+                className="overflow-hidden rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50/50 border border-green-200/60 p-5"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -283,18 +280,18 @@ export default function SalonProfilePage() {
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 + i * 0.05 }}
-                    className="bg-white rounded-[22px] p-5 flex items-center justify-between shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-[#F3F4F6]"
+                    className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 flex items-center justify-between shadow-sm"
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                        <Store size={18} className="text-gray-400" />
+                        <Store size={18} className="text-[#9CA3AF]" />
                       </div>
                       <div>
                         <p className="text-[14px] font-semibold text-[#111827]">{c.salon?.name || "Unknown Salon"}</p>
                         <p className="text-[12px] text-[#6B7280]">{c.salon?.locality}{c.salon?.city ? `, ${c.salon.city}` : ''}</p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1.5 rounded-full text-[11px] font-semibold leading-none border ${
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                       c.status === "approved" ? "bg-green-50 text-green-700 border-green-200" :
                       c.status === "rejected" ? "bg-red-50 text-red-700 border-red-200" :
                       "bg-amber-50 text-amber-700 border-amber-200"
@@ -312,7 +309,7 @@ export default function SalonProfilePage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-[22px] p-10 sm:p-12 text-center shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-[#F3F4F6]"
+              className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-10 sm:p-12 text-center shadow-sm"
             >
               <div className="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center mx-auto mb-5">
                 <Clock size={32} className="text-amber-500" />
@@ -327,16 +324,16 @@ export default function SalonProfilePage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-[22px] p-6 sm:p-8 shadow-[0_10px_40px_rgba(0,0,0,0.06)] border border-[#F3F4F6]"
+              className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-6 sm:p-8 shadow-sm"
             >
               <h3 className="text-[16px] font-bold text-[#111827] mb-5">Search for your salon</h3>
               <div className="relative">
-                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
                 <input
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search by salon name..."
-                  className="w-full h-14 pl-12 pr-6 rounded-full border border-[#F3F4F6] bg-[#FAF8F6] text-[14px] text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 transition-all"
+                  className="w-full h-14 pl-12 pr-6 rounded-xl border border-[#E5E7EB] bg-[#FAFAFB] text-[14px] text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 transition-all"
                 />
               </div>
 
@@ -363,10 +360,10 @@ export default function SalonProfilePage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
-                        className="group flex items-center gap-4 p-4 bg-white rounded-[22px] border border-[#F3F4F6] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-300"
+                        className="group flex items-center gap-4 p-4 bg-white rounded-2xl border border-[#E5E7EB]/60 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
                       >
                         {/* Salon Image Placeholder */}
-                        <div className="w-[100px] h-[80px] sm:w-[120px] sm:h-[90px] rounded-[16px] bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-[100px] h-[80px] sm:w-[120px] sm:h-[90px] rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                           <Store size={28} className="text-pink-300/70" />
                         </div>
 
@@ -378,12 +375,12 @@ export default function SalonProfilePage() {
                             <span className="truncate">{s.address || `${s.locality}, ${s.city}`}</span>
                           </div>
                           <div className="flex items-center gap-2 mt-2">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-pink-50 text-[#EC4899] border border-pink-100">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-pink-50 text-[#EC4899] border border-pink-100">
                               <CheckCircle size={10} />
                               Unclaimed
                             </span>
                             {s.locality && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-500 border border-gray-100">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#F3F4F6] text-[#6B7280] border border-[#E5E7EB]">
                                 {s.locality}
                               </span>
                             )}
@@ -394,7 +391,7 @@ export default function SalonProfilePage() {
                         <button
                           onClick={() => setClaimModal(s)}
                           disabled={claiming}
-                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[13px] font-semibold shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_6px_25px_rgba(236,72,153,0.4)] hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#EC4899] text-white text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                         >
                           <CheckCircle size={14} />
                           Claim
@@ -412,8 +409,8 @@ export default function SalonProfilePage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-8 text-center py-8"
                 >
-                  <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
-                    <Store size={36} className="text-gray-300" />
+                  <div className="w-20 h-20 rounded-full bg-[#F3F4F6] flex items-center justify-center mx-auto mb-4">
+                    <Store size={36} className="text-[#9CA3AF]" />
                   </div>
                   <h4 className="text-[18px] font-bold text-[#111827] mb-1">No salons found</h4>
                   <p className="text-[14px] text-[#6B7280]">
@@ -439,13 +436,13 @@ export default function SalonProfilePage() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
                   transition={{ type: "spring", duration: 0.4, bounce: 0.3 }}
-                  className="bg-white rounded-[24px] p-6 sm:p-8 w-full max-w-lg shadow-[0_25px_60px_rgba(0,0,0,0.15)]"
+                  className="bg-white rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Modal Header */}
                   <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
                         <Store size={22} className="text-[#EC4899]" />
                       </div>
                       <div>
@@ -455,37 +452,37 @@ export default function SalonProfilePage() {
                     </div>
                     <button
                       onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
-                      className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+                      className="w-8 h-8 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
                     >
-                      <X size={15} className="text-gray-500" />
+                      <X size={15} className="text-[#6B7280]" />
                     </button>
                   </div>
 
-                  <div className="border-t border-[#F3F4F6] pt-5">
+                  <div className="border-t border-[#E5E7EB]/60 pt-5">
                     <label className="block text-[13px] font-medium text-[#6B7280] mb-2">
                       Verification Message
                     </label>
-                    <p className="text-[12px] text-gray-400 mb-3">Provide a brief verification message to help us confirm your ownership.</p>
+                    <p className="text-[12px] text-[#9CA3AF] mb-3">Provide a brief verification message to help us confirm your ownership.</p>
                     <textarea
                       value={verificationMsg}
                       onChange={(e) => setVerificationMsg(e.target.value)}
                       placeholder="e.g., I am the owner of this salon and have all business documents..."
                       rows={4}
-                      className="w-full px-4 py-3 rounded-[16px] border border-[#F3F4F6] bg-[#FAF8F6] text-[13px] text-[#111827] placeholder:text-gray-400 focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 resize-none transition-all"
+                      className="w-full px-4 py-3 rounded-2xl border border-[#E5E7EB] bg-[#FAFAFB] text-[13px] text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#EC4899] focus:ring-2 focus:ring-[#EC4899]/20 resize-none transition-all"
                     />
                   </div>
 
-                  <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[#F3F4F6]">
+                  <div className="flex gap-3 justify-end mt-6 pt-4 border-t border-[#E5E7EB]/60">
                     <button
                       onClick={() => { setClaimModal(null); setVerificationMsg(""); }}
-                      className="px-5 py-2.5 rounded-full border border-[#F3F4F6] text-[13px] font-medium text-gray-600 hover:bg-gray-50 transition-all"
+                      className="px-5 py-2.5 rounded-xl border border-[#E5E7EB] text-sm font-medium text-[#6B7280] hover:bg-[#FAFAFB] transition-all"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={() => handleClaim(claimModal.id, verificationMsg)}
                       disabled={claiming}
-                      className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[13px] font-semibold shadow-[0_4px_15px_rgba(236,72,153,0.3)] hover:shadow-[0_6px_25px_rgba(236,72,153,0.4)] hover:scale-105 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="px-5 py-2.5 rounded-xl bg-[#EC4899] text-white text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                       {claiming ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle size={14} />}
                       {claiming ? "Submitting..." : "Submit Claim"}
@@ -502,91 +499,89 @@ export default function SalonProfilePage() {
 
   // Has salon — show edit form
   return (
-    <div className="min-h-screen bg-[#FAF8F6]">
+    <div>
       <DashboardHeader />
-      <main className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-[#111827] text-2xl md:text-3xl font-bold">Salon Profile</h1>
+          <p className="text-[#6B7280] text-sm mt-1">{salon.name}</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">{error}</div>
+      )}
+      {success && (
+        <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px]">{success}</div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="md:col-span-2">
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Salon Name</label>
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Description</label>
+            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] resize-none py-2.5" />
+          </div>
           <div>
-            <h1 className="font-display text-[#111] text-2xl md:text-3xl font-bold">Salon Profile</h1>
-            <p className="text-[#6B7280] text-[14px] mt-1">{salon.name}</p>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Phone</label>
+            <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">City</label>
+            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Locality</label>
+            <input value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">State</label>
+            <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Address</label>
+            <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Opening Time</label>
+            <input type="time" value={form.opening_time} onChange={(e) => setForm({ ...form, opening_time: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Closing Time</label>
+            <input type="time" value={form.closing_time} onChange={(e) => setForm({ ...form, closing_time: e.target.value })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Min Price (₹)</label>
+            <input type="number" min={0} value={form.price_min} onChange={(e) => setForm({ ...form, price_min: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div>
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Max Price (₹)</label>
+            <input type="number" min={0} value={form.price_max} onChange={(e) => setForm({ ...form, price_max: parseInt(e.target.value) || 0 })} className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Amenities (comma-separated)</label>
+            <input value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} placeholder="WiFi, Parking, AC" className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Tags (comma-separated)</label>
+            <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="Hair, Nails, Makeup" className="h-12 rounded-xl border border-[#E5E7EB] px-4 text-sm focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] w-full" />
           </div>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">{error}</div>
-        )}
-        {success && (
-          <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px]">{success}</div>
-        )}
-
-        <div className="bg-white rounded-2xl border border-[#E8E8E8] p-6 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="md:col-span-2">
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Salon Name</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Description</label>
-              <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30 resize-none" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Phone</label>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">City</label>
-              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Locality</label>
-              <input value={form.locality} onChange={(e) => setForm({ ...form, locality: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">State</label>
-              <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Address</label>
-              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Opening Time</label>
-              <input type="time" value={form.opening_time} onChange={(e) => setForm({ ...form, opening_time: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Closing Time</label>
-              <input type="time" value={form.closing_time} onChange={(e) => setForm({ ...form, closing_time: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Min Price (₹)</label>
-              <input type="number" min={0} value={form.price_min} onChange={(e) => setForm({ ...form, price_min: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div>
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Max Price (₹)</label>
-              <input type="number" min={0} value={form.price_max} onChange={(e) => setForm({ ...form, price_max: parseInt(e.target.value) || 0 })} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Amenities (comma-separated)</label>
-              <input value={form.amenities} onChange={(e) => setForm({ ...form, amenities: e.target.value })} placeholder="WiFi, Parking, AC" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-[12px] font-semibold text-[#6B7280] uppercase mb-1.5">Tags (comma-separated)</label>
-              <input value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} placeholder="Hair, Nails, Makeup" className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-[14px] text-[#111] focus:outline-none focus:ring-2 focus:ring-[#EC4899]/30" />
-            </div>
-          </div>
-
-          <div className="pt-4 border-t border-gray-100 flex justify-end">
-            <button
-              onClick={handleSave}
-              disabled={saving || !form.name.trim()}
-              className="px-6 py-2.5 rounded-full bg-[#EC4899] text-white text-[13px] font-semibold hover:bg-[#d63384] transition disabled:opacity-50 flex items-center gap-2"
-            >
-              {saving && <Loader2 size={14} className="animate-spin" />}
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
+        <div className="pt-4 border-t border-[#E5E7EB]/60 flex justify-end">
+          <button
+            onClick={handleSave}
+            disabled={saving || !form.name.trim()}
+            className="px-5 py-2.5 rounded-xl bg-[#EC4899] text-white text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25 disabled:opacity-50 flex items-center gap-2"
+          >
+            {saving && <Loader2 size={14} className="animate-spin" />}
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

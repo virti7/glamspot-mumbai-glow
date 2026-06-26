@@ -20,12 +20,11 @@ export function Navbar({ onBook }: { onBook: () => void }) {
   return (
     <header
       className={`fixed top-0 inset-x-0 z-40 transition-all duration-300 border-b ${
-        scrolled ? "bg-white/90 backdrop-blur-xl border-[#E8E8E8]" : "bg-white border-[#E8E8E8]"
+        scrolled ? "bg-white/90 backdrop-blur-xl shadow-sm border-[#E5E7EB]/60" : "bg-white border-[#E5E7EB]/60"
       }`}
-      style={{ boxShadow: scrolled ? "0 1px 12px rgba(0,0,0,0.06)" : "none" }}
     >
-      <div className="flex items-center justify-between px-6 md:px-[60px] py-5">
-        <a href="#top" className="font-display font-bold text-[#111] text-2xl tracking-tight">
+      <div className="flex items-center justify-between px-6 md:px-[60px] py-4">
+        <a href="#top" className="font-display font-bold text-[#111827] text-xl tracking-tight">
           GlamSpot
         </a>
         <nav className="hidden md:flex items-center gap-8">
@@ -33,41 +32,41 @@ export function Navbar({ onBook }: { onBook: () => void }) {
             <a
               key={l.l}
               href={l.h}
-              className="text-[#333] hover:text-[#F5C842] text-[14px] transition-all duration-200 relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#F5C842] after:transition-all after:duration-200 hover:after:w-full"
+className="text-[#6B7280] hover:text-[#111827] text-sm font-medium transition-colors relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#EC4899] after:transition-all after:duration-200 hover:after:w-full"
             >
               {l.l}
             </a>
           ))}
           <button
             onClick={onBook}
-            className="text-[#333] hover:text-[#F5C842] text-[14px] transition-all duration-200 relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#F5C842] after:transition-all after:duration-200 hover:after:w-full"
+            className="bg-[#EC4899] text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25"
           >
             Book Now
           </button>
         </nav>
         <div className="hidden md:flex items-center gap-3">
-          <span className="border border-[#E8E8E8] rounded-full px-4 py-2 text-[13px] text-[#333] flex items-center gap-1.5">
+          <span className="border border-[#E5E7EB] rounded-xl px-4 py-2 text-xs flex items-center gap-1.5 text-[#6B7280]">
             <MapPin size={14} /> Mumbai
           </span>
           <Link
             href="/signin"
-            className="bg-[#111] text-white rounded-full px-5 py-2 text-[13px] font-semibold hover:bg-[#333] transition"
+            className="bg-[#111827] text-white rounded-xl px-5 py-2.5 text-xs font-semibold hover:bg-[#1F2937] transition"
           >
             Sign In
           </Link>
         </div>
-        <button onClick={() => setOpen((v) => !v)} className="md:hidden text-[#111]">
+        <button onClick={() => setOpen((v) => !v)} className="md:hidden text-[#111827]">
           <Menu size={24} />
         </button>
       </div>
       {open && (
-        <div className="md:hidden bg-white border-t border-[#E8E8E8] px-6 py-6 space-y-4">
+        <div className="md:hidden bg-white border-t border-[#E5E7EB]/60 px-6 py-6 space-y-4">
           {links.map((l) => (
             <a
               key={l.l}
               href={l.h}
               onClick={() => setOpen(false)}
-              className="block text-[#333] text-base"
+              className="block text-[#6B7280] text-sm font-medium hover:text-[#111827]"
             >
               {l.l}
             </a>
@@ -77,13 +76,13 @@ export function Navbar({ onBook }: { onBook: () => void }) {
               setOpen(false);
               onBook();
             }}
-            className="block text-[#333] text-base"
+            className="w-full bg-[#EC4899] text-white rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-[#DB2777] transition-all text-center"
           >
             Book Now
           </button>
           <Link
             href="/signin"
-            className="w-full bg-[#111] text-white rounded-full py-3 font-semibold text-center block"
+            className="w-full bg-[#111827] text-white rounded-xl py-3 text-sm font-semibold text-center block hover:bg-[#1F2937] transition"
           >
             Sign In
           </Link>

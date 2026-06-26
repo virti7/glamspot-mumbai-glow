@@ -1,10 +1,10 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Star, MapPin, Heart, BadgeCheck, Crown } from "lucide-react";
+import { Star, MapPin, Heart, BadgeCheck, Crown, Calendar } from "lucide-react";
 import type { Salon } from "@/services/salon.service";
 
 const salonImages = [
@@ -24,10 +24,18 @@ interface SalonCardProps {
   isFavorite: boolean;
   onToggleFavorite: (salonId: string) => void;
   user: unknown;
+  onBook?: (salon: Salon) => void;
 }
 
-function SalonCardComponent({ salon, index, isFavorite, onToggleFavorite, user }: SalonCardProps) {
+function SalonCardComponent({ salon, index, isFavorite, onToggleFavorite, user, onBook }: SalonCardProps) {
   const image = salon.cover_image || salonImages[index % salonImages.length];
+  const handleBook = useCallback((e: React.MouseEvent) => {
+    if (onBook) {
+      e.preventDefault();
+      e.stopPropagation();
+      onBook(salon);
+    }
+  }, [onBook, salon]);
 
   return (
     <motion.div
@@ -100,12 +108,22 @@ function SalonCardComponent({ salon, index, isFavorite, onToggleFavorite, user }
         </p>
 
         <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-          <Link
-            href={`/salons/${salon.slug || salon.id}`}
-            className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[12px] font-semibold hover:shadow-[0_8px_25px_rgba(236,72,153,0.35)] transition-all duration-300"
-          >
-            Book Now
-          </Link>
+          {onBook ? (
+            <button
+              onClick={handleBook}
+              className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[12px] font-semibold hover:shadow-[0_8px_25px_rgba(236,72,153,0.35)] transition-all duration-300 flex items-center gap-1.5"
+            >
+              <Calendar size={12} />
+              Book Now
+            </button>
+          ) : (
+            <Link
+              href={`/salons/${salon.slug || salon.id}`}
+              className="px-5 py-2.5 rounded-full bg-gradient-to-r from-[#EC4899] to-[#DB2777] text-white text-[12px] font-semibold hover:shadow-[0_8px_25px_rgba(236,72,153,0.35)] transition-all duration-300"
+            >
+              Book Now
+            </Link>
+          )}
           {salon.tags && salon.tags.length > 0 && (
             <div className="flex gap-1">
               {salon.tags.slice(0, 2).map((tag) => (

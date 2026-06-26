@@ -8,21 +8,21 @@ export function ResultsView({ r }: { r: ScanResult }) {
     const t = setTimeout(() => setW((Math.max(0, Math.min(5, r.damage_level)) / 5) * 100), 80);
     return () => clearTimeout(t);
   }, [r]);
-  const damageColor = r.damage_level <= 3 ? "#F5C842" : "#EF4444";
+  const damageColor = r.damage_level <= 3 ? "#EC4899" : "#EF4444";
   const urgencyColor =
-    r.urgency === "routine" ? "#4ADE80" : r.urgency === "important" ? "#F5C842" : "#EF4444";
+    r.urgency === "routine" ? "#4ADE80" : r.urgency === "important" ? "#EC4899" : "#EF4444";
   return (
-    <div className="space-y-3 fade-up">
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
+    <div className="space-y-4 fade-up">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
         <div className="flex flex-wrap gap-1.5">
           <span
-            className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider"
-            style={{ background: "#F5C84222", color: "#F5C842", border: "1px solid #F5C842" }}
+            className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider font-semibold"
+            style={{ background: "#EC489922", color: "#EC4899", border: "1px solid #EC4899" }}
           >
             {r.concern_type}
           </span>
           <span
-            className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wider"
+            className="rounded-full px-3 py-1 text-[10px] uppercase tracking-wider font-semibold"
             style={{
               background: urgencyColor + "22",
               color: urgencyColor,
@@ -32,30 +32,30 @@ export function ResultsView({ r }: { r: ScanResult }) {
             {r.urgency}
           </span>
         </div>
-        <h3 className="font-display text-white text-[18px] font-bold mt-2">{r.condition}</h3>
+        <h3 className="font-display text-white text-lg font-bold mt-2">{r.condition}</h3>
         <div className="mt-3">
           <div className="flex justify-between text-[12px] text-[#888]">
             <span>Damage Level</span>
             <span className="text-white">{r.damage_level}/5</span>
           </div>
-          <div className="mt-1.5 h-1.5 bg-[#333] rounded-full overflow-hidden">
+          <div className="mt-1.5 h-2 bg-[#333] rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-[width] duration-1000 ease-out"
+              className="h-full rounded-full transition-all duration-1000 ease-out"
               style={{ width: `${w}%`, background: damageColor }}
             />
           </div>
         </div>
       </div>
 
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
         <p className="text-white text-[13px] font-semibold mb-2 flex items-center gap-1.5">
-          <Sparkles size={12} className="text-[#F5C842]" /> Recommended Treatments
+          <Sparkles size={12} className="text-[#EC4899]" /> Recommended Treatments
         </p>
         <div className="flex flex-wrap gap-1.5">
           {r.treatments.map((t, i) => (
             <span
               key={i}
-              className="bg-[#F5C842] text-[#111] font-semibold rounded-full px-3 py-1 text-[12px]"
+              className="bg-[#EC4899] text-white font-semibold rounded-xl px-3 py-1.5 text-xs"
             >
               {t}
             </span>
@@ -63,23 +63,23 @@ export function ResultsView({ r }: { r: ScanResult }) {
         </div>
       </div>
 
-      <div className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-[16px] p-4">
-        <p className="text-[#F5C842] text-[13px] font-semibold mb-1 flex items-center gap-1.5">
+      <div className="border border-[#EC4899]/30 rounded-2xl p-5 bg-white/5">
+        <p className="text-[#EC4899] text-[13px] font-semibold mb-1 flex items-center gap-1.5">
           <Zap size={12} /> GlamAI Pro Tip
         </p>
         <p className="text-white text-[13px] italic">{r.tip}</p>
       </div>
 
-      <div className="rounded-[16px] p-4 bg-[#1A1A1A] border border-[#F5C842]/30">
-        <h4 className="font-display text-white text-[16px]">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
+        <h4 className="font-display text-white text-lg font-bold">
           3 Mumbai Salons Treat This Condition
         </h4>
-        <p className="text-[#ddd] text-[12px] mt-0.5">
+        <p className="text-[#9CA3AF] text-[12px] mt-0.5">
           Based on your diagnosis, these salons specialize in {r.treatments[0]}
         </p>
         <a
           href="#discover"
-          className="inline-block mt-2.5 bg-[#F5C842] text-[#111] rounded-full px-5 py-2 text-[13px] font-bold hover:bg-[#e0b635] transition"
+          className="inline-flex items-center gap-2 mt-2.5 bg-[#EC4899] text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-[#DB2777] transition-all"
         >
           Find Matched Salons <ArrowRight size={12} className="inline" />
         </a>

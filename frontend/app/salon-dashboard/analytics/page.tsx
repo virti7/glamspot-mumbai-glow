@@ -65,80 +65,83 @@ export default function SalonAnalyticsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6]">
+    <div>
       <DashboardHeader />
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <h1 className="font-display text-[#111] text-2xl md:text-3xl font-bold mb-6">Analytics</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-display text-[#111827] text-2xl md:text-3xl font-bold">Analytics</h1>
+          <p className="text-[#6B7280] text-sm mt-1">Track your salon performance</p>
+        </div>
+      </div>
 
-        {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">
-            {error}
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">
+          {error}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-center py-12 text-[#9CA3AF]">Loading analytics...</div>
+      ) : bookings.length === 0 ? (
+        <div className="text-center py-12 text-[#9CA3AF]">No analytics data yet. Data will appear once bookings are made.</div>
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {summaryCards.map((card) => (
+              <div key={card.label} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm hover:shadow-lg transition-shadow">
+                <card.icon size={20} className={card.color} />
+                <p className="text-2xl font-bold text-[#111827] mt-2">{card.value}</p>
+                <p className="text-[13px] text-[#6B7280]">{card.label}</p>
+              </div>
+            ))}
           </div>
-        )}
 
-        {loading ? (
-          <div className="text-center py-12 text-[#999]">Loading analytics...</div>
-        ) : bookings.length === 0 ? (
-          <div className="text-center py-12 text-[#999]">No analytics data yet. Data will appear once bookings are made.</div>
-        ) : (
-          <>
-            {/* Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              {summaryCards.map((card) => (
-                <div key={card.label} className="bg-white rounded-xl p-5 border border-[#E8E8E8]">
-                  <card.icon size={20} className={card.color} />
-                  <p className="text-2xl font-bold text-[#111] mt-2">{card.value}</p>
-                  <p className="text-[13px] text-[#6B7280]">{card.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Period Breakdown */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {periodCards.map((p) => (
-                <div key={p.label} className="bg-white rounded-xl p-5 border border-[#E8E8E8]">
-                  <h3 className="font-semibold text-[#111] text-[15px]">{p.label}</h3>
-                  <div className="flex items-center justify-between mt-3">
-                    <div>
-                      <p className="text-[12px] text-[#6B7280]">Bookings</p>
-                      <p className="text-xl font-bold text-[#111]">{p.count}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[12px] text-[#6B7280]">Revenue</p>
-                      <p className="text-xl font-bold text-[#111]">₹{p.revenue}</p>
-                    </div>
+          {/* Period Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            {periodCards.map((p) => (
+              <div key={p.label} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm hover:shadow-lg transition-shadow">
+                <h3 className="font-semibold text-[#111827] text-[15px]">{p.label}</h3>
+                <div className="flex items-center justify-between mt-3">
+                  <div>
+                    <p className="text-[12px] text-[#6B7280]">Bookings</p>
+                    <p className="text-xl font-bold text-[#111827]">{p.count}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[12px] text-[#6B7280]">Revenue</p>
+                    <p className="text-xl font-bold text-[#111827]">₹{p.revenue}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            {/* Popular Services */}
-            <div className="bg-white rounded-2xl border border-[#E8E8E8] p-6">
-              <h3 className="font-semibold text-[#111] text-[15px] mb-4">Popular Services</h3>
-              {popularServices.length === 0 ? (
-                <p className="text-[#6B7280] text-[13px]">No service data yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {popularServices.map(([name, count]) => (
-                    <div key={name} className="flex items-center justify-between">
-                      <span className="text-[14px] text-[#111]">{name}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 bg-[#F8F8F8] rounded-full h-2">
-                          <div
-                            className="bg-[#F5C842] h-full rounded-full"
-                            style={{ width: `${Math.min(100, (count / popularServices[0][1]) * 100)}%` }}
-                          />
-                        </div>
-                        <span className="text-[13px] text-[#6B7280] w-6 text-right">{count}</span>
+          {/* Popular Services */}
+          <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm">
+            <h3 className="font-semibold text-[#111827] text-[15px] mb-4">Popular Services</h3>
+            {popularServices.length === 0 ? (
+              <p className="text-[#6B7280] text-[13px]">No service data yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {popularServices.map(([name, count]) => (
+                  <div key={name} className="flex items-center justify-between">
+                    <span className="text-[14px] text-[#111827]">{name}</span>
+                    <div className="flex items-center gap-3">
+                      <div className="w-32 bg-[#F3F4F6] rounded-full h-2">
+                        <div
+                          className="bg-[#F5C842] h-full rounded-full"
+                          style={{ width: `${Math.min(100, (count / popularServices[0][1]) * 100)}%` }}
+                        />
                       </div>
+                      <span className="text-[13px] text-[#6B7280] w-6 text-right">{count}</span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </main>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

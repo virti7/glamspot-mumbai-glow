@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { userService, type UserStats } from "@/services/user.service";
-import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
+import { CustomerNavbar } from "@/components/customer/CustomerNavbar";
 import { WelcomeBanner } from "@/components/dashboard/WelcomeBanner";
 import { StatsGrid } from "@/components/dashboard/StatsGrid";
 import { QuickAccessCards } from "@/components/dashboard/QuickAccessCards";
@@ -28,12 +28,12 @@ export default function DashboardPage() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#FAF8F6]">
-        <DashboardNavbar />
-        <div className="flex items-center justify-center h-screen">
+      <div className="min-h-screen bg-[#FAFAFB]">
+        <CustomerNavbar />
+        <div className="flex items-center justify-center min-h-[60vh]">
           <div className="flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-pink-200 border-t-[#EC4899] rounded-full spin-ring" />
-            <span className="text-[13px] text-gray-400 font-medium">Loading your dashboard...</span>
+            <div className="w-8 h-8 border-2 border-[#E5E7EB] border-t-[#EC4899] rounded-full animate-spin" />
+            <span className="text-sm text-[#9CA3AF] font-medium">Loading your dashboard...</span>
           </div>
         </div>
       </div>
@@ -41,8 +41,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6]">
-      <DashboardNavbar />
+    <div className="min-h-screen bg-[#FAFAFB]">
+      <CustomerNavbar />
 
       <main className="w-full px-3 lg:px-4 xl:px-5 pt-[100px] pb-14 space-y-8">
         <WelcomeBanner />

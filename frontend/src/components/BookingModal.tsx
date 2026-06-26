@@ -53,48 +53,47 @@ export function BookingModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="modal-in bg-white rounded-[28px] max-w-[520px] w-full p-8 md:p-10 max-h-[90vh] overflow-y-auto relative"
-        style={{ boxShadow: "0 24px 80px rgba(0,0,0,0.25)" }}
+        className="modal-in bg-white rounded-3xl max-w-[520px] w-full p-8 max-h-[90vh] overflow-y-auto relative shadow-2xl border border-[#E5E7EB]/40"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-[#333] hover:text-[#111] transition"
+          className="absolute top-5 right-5 w-8 h-8 rounded-xl text-[#6B7280] hover:bg-[#FAFAFB] hover:text-[#111827] transition-all flex items-center justify-center"
         >
           <X size={20} />
         </button>
 
         {!done ? (
           <>
-            <h3 className="font-display text-[#111] text-[26px] md:text-[28px]">
+            <h3 className="font-display text-[#111827] text-2xl font-bold">
               Book Your Appointment
             </h3>
-            <p className="text-[#999] italic text-[14px] mt-1">
+            <p className="text-sm text-[#6B7280] mt-1">
               {salon?.name ?? "Mumbai's finest salons"}
             </p>
 
-            <div className="flex items-center gap-2 mt-6">
+            <div className="flex gap-2 mt-6">
               {labels.map((l, i) => (
                 <div key={l} className="flex-1 flex items-center gap-2">
                   <div className="flex flex-col items-center gap-1">
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-semibold ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold transition-all ${
                         i < step
-                          ? "bg-[#F5C842] text-[#111]"
+                          ? "bg-[#EC4899] text-white"
                           : i === step
-                            ? "bg-[#111] text-white"
-                            : "border border-[#E8E8E8] text-[#999]"
+                            ? "bg-[#111827] text-white ring-2 ring-[#EC4899]/30"
+                            : "border border-[#E5E7EB] text-[#9CA3AF]"
                       }`}
                     >
                       {i < step ? <Check size={12} /> : i + 1}
                     </div>
-                    <span className="text-[10px] text-[#999]">{l}</span>
+                    <span className="text-[10px] text-[#9CA3AF]">{l}</span>
                   </div>
-                  {i < labels.length - 1 && <div className="flex-1 h-px bg-[#E8E8E8] -mt-4" />}
+                  {i < labels.length - 1 && <div className="flex-1 h-px bg-[#E5E7EB] -mt-4" />}
                 </div>
               ))}
             </div>
@@ -102,7 +101,7 @@ export function BookingModal({
             <div className="mt-8">
               {step === 0 && (
                 <>
-                  <p className="text-[#111] text-[16px] font-semibold mb-4">What would you like?</p>
+                  <p className="text-[#111827] text-sm font-semibold mb-4">What would you like?</p>
                   <div className="flex flex-wrap gap-2">
                     {BOOKING_SERVICES.map((s) => {
                       const on = services.includes(s);
@@ -112,7 +111,7 @@ export function BookingModal({
                           onClick={() =>
                             setServices((arr) => (on ? arr.filter((x) => x !== s) : [...arr, s]))
                           }
-                          className={`rounded-full px-4 py-2 text-[13px] transition ${on ? "bg-[#111] text-white border border-[#111]" : "border border-[#E8E8E8] text-[#333] hover:border-[#111]"}`}
+                          className={`rounded-xl px-4 py-2 text-sm transition ${on ? "bg-[#111827] text-white border border-[#111827]" : "border border-[#E5E7EB] text-[#6B7280] hover:border-[#111827]"}`}
                         >
                           {s}
                         </button>
@@ -123,7 +122,7 @@ export function BookingModal({
               )}
               {step === 1 && (
                 <>
-                  <p className="text-[#111] text-[16px] font-semibold mb-4">Pick your stylist</p>
+                  <p className="text-[#111827] text-sm font-semibold mb-4">Pick your stylist</p>
                   <div className="grid grid-cols-3 gap-3">
                     {BOOKING_STYLISTS.map((s) => {
                       const on = stylist === s.name;
@@ -131,13 +130,13 @@ export function BookingModal({
                         <button
                           key={s.name}
                           onClick={() => setStylist(s.name)}
-                          className={`bg-[#F8F8F8] rounded-2xl p-4 text-center transition ${on ? "border-[#F5C842] border-2" : "border border-[#E8E8E8]"}`}
+                          className={`bg-[#FAFAFB] rounded-2xl p-4 text-center border border-[#E5E7EB] hover:border-[#EC4899] transition-all cursor-pointer ${on ? "border-2 border-[#EC4899] bg-[#EC4899]/5" : ""}`}
                         >
-                          <User size={24} className="mx-auto text-[#666]" />
-                          <p className="text-[#111] text-[13px] font-semibold mt-2">{s.name}</p>
-                          <p className="text-[#999] text-[11px]">{s.spec}</p>
-                          <p className="text-[#F5C842] text-[11px] mt-1 flex items-center justify-center gap-0.5">
-                            <Star size={10} fill="#F5C842" color="#F5C842" /> {s.rating}
+                          <User size={24} className="mx-auto text-[#6B7280]" />
+                          <p className="text-[#111827] text-[13px] font-semibold mt-2">{s.name}</p>
+                          <p className="text-[#9CA3AF] text-[11px]">{s.spec}</p>
+                          <p className="text-[#EC4899] text-[11px] mt-1 flex items-center justify-center gap-0.5">
+                            <Star size={10} fill="#EC4899" color="#EC4899" /> {s.rating}
                           </p>
                         </button>
                       );
@@ -147,7 +146,7 @@ export function BookingModal({
               )}
               {step === 2 && (
                 <>
-                  <p className="text-[#111] text-[16px] font-semibold mb-4">Pick date &amp; time</p>
+                  <p className="text-[#111827] text-sm font-semibold mb-4">Pick date &amp; time</p>
                   <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
                     {days.map((d) => {
                       const on = date === d.key;
@@ -155,7 +154,7 @@ export function BookingModal({
                         <button
                           key={d.key}
                           onClick={() => setDate(d.key)}
-                          className={`flex-shrink-0 rounded-xl border px-3 py-2 text-center transition ${on ? "bg-[#111] text-white border-[#111]" : "border-[#E8E8E8] text-[#333] bg-[#F8F8F8]"}`}
+                          className={`flex-shrink-0 rounded-xl border px-4 py-3 text-center transition-all ${on ? "bg-[#111827] text-white border-[#111827]" : "border-[#E5E7EB] text-[#6B7280] hover:border-[#111827]"}`}
                         >
                           <p className="text-[11px]">{d.label}</p>
                           <p className="text-[16px] font-semibold">{d.sub}</p>
@@ -172,12 +171,12 @@ export function BookingModal({
                           key={t}
                           disabled={booked}
                           onClick={() => setTime(t)}
-                          className={`rounded-xl p-3 text-[12px] border transition ${
+                          className={`rounded-xl py-3 text-sm border transition ${
                             booked
-                              ? "bg-[#F8F8F8] text-[#ccc] border-[#E8E8E8] cursor-not-allowed"
+                              ? "bg-[#FAFAFB] text-[#D1D5DB] cursor-not-allowed border-[#E5E7EB]"
                               : on
-                                ? "bg-[#111] text-white border-[#111]"
-                                : "border-[#E8E8E8] text-[#333] bg-[#F8F8F8] hover:border-[#111]"
+                                ? "bg-[#111827] text-white border-[#111827]"
+                                : "border-[#E5E7EB] text-[#6B7280] hover:border-[#111827]"
                           }`}
                         >
                           {booked ? "Booked" : t}
@@ -189,7 +188,7 @@ export function BookingModal({
               )}
               {step === 3 && (
                 <>
-                  <div className="bg-[#F8F8F8] border border-[#E8E8E8] rounded-2xl p-6">
+                  <div className="bg-[#FAFAFB] border border-[#E5E7EB]/60 rounded-2xl p-5">
                     {[
                       ["Salon", salon?.name ?? "GlamSpot Partner"],
                       ["Services", services.join(", ") || "—"],
@@ -200,16 +199,16 @@ export function BookingModal({
                     ].map(([k, v], i) => (
                       <div
                         key={k as string}
-                        className={`flex justify-between py-3 ${i > 0 ? "border-t border-[#E8E8E8]" : ""}`}
+                        className={`flex justify-between py-3 border-b border-[#E5E7EB]/40 ${i === 5 ? "border-b-0" : ""}`}
                       >
-                        <span className="text-[#999] text-[13px]">{k}</span>
-                        <span className="text-[#111] text-[14px] text-right">{v}</span>
+                        <span className="text-xs text-[#6B7280]">{k}</span>
+                        <span className="text-sm text-[#111827] font-medium text-right">{v}</span>
                       </div>
                     ))}
                   </div>
                   <button
                     onClick={() => setDone(true)}
-                    className="w-full bg-[#111] text-white rounded-full py-4 font-bold text-[15px] mt-6 hover:bg-[#333] transition"
+                    className="w-full bg-[#EC4899] text-white rounded-xl py-4 text-sm font-bold hover:bg-[#DB2777] transition-all mt-6"
                   >
                     Confirm Booking
                   </button>
@@ -222,14 +221,14 @@ export function BookingModal({
                 <button
                   onClick={() => setStep((s) => Math.max(0, s - 1))}
                   disabled={step === 0}
-                  className="border border-[#E8E8E8] text-[#333] rounded-full px-6 py-3 disabled:opacity-30"
+                  className="border border-[#E5E7EB] text-[#6B7280] rounded-xl px-6 py-3 text-sm hover:bg-[#FAFAFB] transition-all disabled:opacity-40"
                 >
                   Back
                 </button>
                 <button
                   onClick={() => setStep((s) => s + 1)}
                   disabled={!canNext}
-                  className="bg-[#111] text-white rounded-full px-6 py-3 font-semibold disabled:opacity-40"
+                  className="bg-[#EC4899] text-white rounded-xl px-6 py-3 text-sm font-semibold hover:bg-[#DB2777] transition-all disabled:opacity-40"
                 >
                   Next <ArrowRight size={14} className="inline" />
                 </button>
@@ -238,31 +237,31 @@ export function BookingModal({
           </>
         ) : (
           <div className="py-8 text-center">
-            <div className="w-20 h-20 rounded-full bg-[#FFF9E6] border border-[#F5C842] mx-auto flex items-center justify-center">
+            <div className="w-20 h-20 rounded-full bg-[#F0FDF4] border border-[#BBF7D0] mx-auto flex items-center justify-center">
               <svg width="40" height="40" viewBox="0 0 40 40">
                 <path
                   className="draw-check"
                   d="M10 21 L18 29 L31 13"
                   fill="none"
-                  stroke="#F5C842"
+                  stroke="#22C55E"
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
             </div>
-            <h3 className="font-display text-[#111] text-[28px] mt-6">Booking Confirmed!</h3>
-            <p className="text-[#999] text-[14px] mt-2">
+            <h3 className="font-display text-[#111827] text-2xl mt-6">Booking Confirmed!</h3>
+            <p className="text-sm text-[#6B7280] mt-2">
               See you at {salon?.name ?? "your salon"} on {date ?? "the chosen day"} at{" "}
               {time ?? "your slot"}
             </p>
             <div className="flex flex-wrap justify-center gap-3 mt-6">
-              <button className="border border-[#E8E8E8] text-[#333] rounded-full px-5 py-2.5 flex items-center gap-1.5">
+              <button className="border border-[#E5E7EB] rounded-xl px-5 py-2.5 text-sm text-[#6B7280] hover:bg-[#FAFAFB] flex items-center gap-1.5">
                 <Calendar size={14} /> Add to Calendar
               </button>
               <button
                 onClick={onClose}
-                className="border border-[#E8E8E8] text-[#333] rounded-full px-5 py-2.5 flex items-center gap-1.5"
+                className="border border-[#E5E7EB] rounded-xl px-5 py-2.5 text-sm text-[#6B7280] hover:bg-[#FAFAFB] flex items-center gap-1.5"
               >
                 <Bookmark size={14} /> View Booking
               </button>

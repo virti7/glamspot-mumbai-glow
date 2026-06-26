@@ -39,33 +39,33 @@ export default function ForgotPasswordPage() {
       <div className="flex flex-col items-start">
         <Link
           href="/signin"
-          className="inline-flex items-center gap-1.5 text-[#6B7280] text-[13px] font-medium hover:text-[#111] transition-colors mb-8"
+          className="inline-flex items-center gap-1.5 text-sm text-[#6B7280] font-medium hover:text-[#111827] transition-colors mb-8"
         >
           <ArrowLeft size={15} />
           Back to Sign In
         </Link>
 
-        <h1 className="font-display font-bold text-[32px] md:text-[34px] text-[#111] leading-[1.1] tracking-[-0.01em]">
+        <h1 className="font-display font-bold text-[32px] md:text-[34px] text-[#111827] leading-[1.1] tracking-[-0.01em]">
           Forgot Password
         </h1>
-        <p className="text-[#6B7280] text-[14px] leading-[1.55] mt-2.5">
+        <p className="text-sm text-[#6B7280] leading-relaxed mt-2.5">
           Enter your email and we&apos;ll send you a reset link.
         </p>
 
         {error && (
-          <div className="w-full mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">
+          <div className="w-full mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {sent ? (
-          <div className="w-full mt-6 p-6 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[14px]">
+          <div className="w-full mt-6 p-6 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
             Check your email for the password reset link.
           </div>
         ) : (
           <form className="w-full mt-6 space-y-4" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="reset-email" className="block text-[13px] font-medium text-[#111] mb-1.5">
+              <label htmlFor="reset-email" className="block text-sm font-medium text-[#111827] mb-1.5">
                 Email Address
               </label>
               <div className="relative">
@@ -76,7 +76,7 @@ export default function ForgotPasswordPage() {
                   placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-[46px] pl-10 pr-4 rounded-xl border border-[#E5E7EB] bg-white text-[14px] text-[#111] placeholder:text-[#9CA3AF] focus:outline-none focus:border-[#111] focus:ring-1 focus:ring-[#111]/10 transition-all"
+                  className="w-full h-12 pl-10 pr-4 rounded-xl border border-[#E5E7EB] bg-white text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] focus:outline-none transition-all"
                 />
               </div>
             </div>
@@ -84,16 +84,16 @@ export default function ForgotPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[48px] bg-[#111] text-white rounded-xl text-[15px] font-semibold hover:bg-[#333] active:scale-[0.98] transition-all mt-1 disabled:opacity-50"
+              className="w-full h-12 bg-[#EC4899] text-white rounded-xl text-sm font-semibold hover:bg-[#DB2777] transition-all mt-1 disabled:opacity-50"
             >
               {loading ? "Sending..." : "Send Reset Link"}
             </button>
           </form>
         )}
 
-        <p className="text-center text-[13px] text-[#6B7280] mt-6 w-full">
+        <p className="text-center text-sm text-[#6B7280] mt-6 w-full">
           Remember your password?{" "}
-          <Link href="/signin" className="text-[#E85D75] font-semibold hover:underline">
+          <Link href="/signin" className="text-[#EC4899] font-semibold hover:text-[#DB2777] transition-colors">
             Sign in
           </Link>
         </p>

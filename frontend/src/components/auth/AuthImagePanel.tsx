@@ -14,7 +14,7 @@ const features = [
 
 export function AuthImagePanel({ imageUrl, activeDot = 0 }: AuthImagePanelProps) {
   return (
-    <div className="hidden lg:flex relative flex-1 rounded-r-[24px] overflow-hidden">
+    <div className="hidden lg:flex relative flex-1 rounded-r-2xl overflow-hidden">
       <img
         src={imageUrl}
         alt="Salon"
@@ -24,7 +24,7 @@ export function AuthImagePanel({ imageUrl, activeDot = 0 }: AuthImagePanelProps)
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.40) 50%, rgba(0,0,0,0.75) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(236,72,153,0.25) 50%, rgba(0,0,0,0.75) 100%)",
         }}
       />
       <div className="absolute inset-0 flex flex-col justify-end p-8 pb-10">

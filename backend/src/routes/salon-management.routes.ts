@@ -8,14 +8,18 @@ export const salonManagementRouter = Router();
 
 const ownerOrAdmin = requireRole("salon_owner", "admin");
 
-async function getSalonId(userId: string): Promise<string | null> {
+async function getSalonIds(userId: string): Promise<string[]> {
   const supabase = getSupabaseServerClient();
   const { data } = await supabase
     .from("salons")
     .select("id")
-    .eq("owner_id", userId)
-    .single();
-  return data?.id ?? null;
+    .eq("owner_id", userId);
+  return (data ?? []).map((s) => s.id);
+}
+
+async function getSalonId(userId: string): Promise<string | null> {
+  const ids = await getSalonIds(userId);
+  return ids[0] ?? null;
 }
 
 // ── CLAIMS ──
@@ -276,8 +280,14 @@ salonManagementRouter.get("/search", authMiddleware, async (req, res) => {
 salonManagementRouter.get("/stats", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.role === "admin" ? (req.query.salonId as string) || user.id : user.id);
+    let salonId: string | null;
+    if (userRole === "admin" && req.query.salonId) {
+      salonId = req.query.salonId as string;
+    } else {
+      salonId = await getSalonId(user.id);
+    }
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
 
     const today = new Date().toISOString().split("T")[0];
@@ -315,8 +325,14 @@ salonManagementRouter.get("/stats", authMiddleware, ownerOrAdmin, async (req, re
 salonManagementRouter.get("/charts", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.id);
+    let salonId: string | null;
+    if (userRole === "admin" && req.query.salonId) {
+      salonId = req.query.salonId as string;
+    } else {
+      salonId = await getSalonId(user.id);
+    }
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
 
     const days = parseInt(req.query.days as string) || 30;
@@ -446,11 +462,23 @@ salonManagementRouter.post("/staff", authMiddleware, ownerOrAdmin, async (req, r
     const supabase = getSupabaseServerClient();
     const salonId = await getSalonId(user.id);
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
-    const { name, role, experience, photo, specialization } = req.body;
+    const { name, role, experience, photo, specialization, phone, email, bio, working_days, working_hours } = req.body;
     if (!name) { res.status(400).json({ error: "Name is required" }); return; }
     const { data, error } = await supabase
       .from("salon_staff")
-      .insert({ salon_id: salonId, name, role, experience, photo, specialization })
+      .insert({
+        salon_id: salonId,
+        name,
+        role,
+        experience,
+        photo,
+        specialization,
+        phone: phone || null,
+        email: email || null,
+        bio: bio || null,
+        working_days: working_days || null,
+        working_hours: working_hours || null,
+      })
       .select()
       .single();
     if (error) { res.status(500).json({ error: error.message }); return; }
@@ -464,10 +492,22 @@ salonManagementRouter.put("/staff/:id", authMiddleware, ownerOrAdmin, async (req
     const supabase = getSupabaseServerClient();
     const salonId = await getSalonId(user.id);
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
-    const { name, role, experience, photo, specialization, is_active } = req.body;
+    const { name, role, experience, photo, specialization, is_active, phone, email, bio, working_days, working_hours } = req.body;
+    const updateData: Record<string, any> = {};
+    if (name !== undefined) updateData.name = name;
+    if (role !== undefined) updateData.role = role;
+    if (experience !== undefined) updateData.experience = experience;
+    if (photo !== undefined) updateData.photo = photo;
+    if (specialization !== undefined) updateData.specialization = specialization;
+    if (is_active !== undefined) updateData.is_active = is_active;
+    if (phone !== undefined) updateData.phone = phone;
+    if (email !== undefined) updateData.email = email;
+    if (bio !== undefined) updateData.bio = bio;
+    if (working_days !== undefined) updateData.working_days = working_days;
+    if (working_hours !== undefined) updateData.working_hours = working_hours;
     const { data, error } = await supabase
       .from("salon_staff")
-      .update({ name, role, experience, photo, specialization, is_active })
+      .update(updateData)
       .eq("id", req.params.id)
       .eq("salon_id", salonId)
       .select()
@@ -497,49 +537,147 @@ salonManagementRouter.delete("/staff/:id", authMiddleware, ownerOrAdmin, async (
 salonManagementRouter.get("/bookings", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.id);
-    if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
+    let salonIds: string[];
+    if (userRole === "admin" && req.query.salonId) {
+      salonIds = [req.query.salonId as string];
+    } else {
+      salonIds = await getSalonIds(user.id);
+    }
+    if (salonIds.length === 0) { res.status(404).json({ error: "No salon found" }); return; }
     const status = req.query.status as string | undefined;
-    let query = supabase
+
+    const { data: bookings, error: bookingsErr } = await supabase
       .from("bookings")
-      .select("*, user:profiles(full_name, phone, email), booking_services(*)")
-      .eq("salon_id", salonId)
-      .order("booking_date", { ascending: false });
-    if (status && status !== "all") query = query.eq("status", status);
-    const { data, error } = await query;
-    if (error) { res.status(500).json({ error: error.message }); return; }
-    res.json(data ?? []);
-  } catch { res.status(500).json({ error: "Failed to fetch bookings" }); }
+      .select("*")
+      .in("salon_id", salonIds)
+      .order("booking_date", { ascending: false })
+      .order("start_time", { ascending: false });
+
+    if (bookingsErr) { res.status(500).json({ error: `Failed to fetch bookings: ${bookingsErr.message}` }); return; }
+    if (!bookings || bookings.length === 0) { res.json([]); return; }
+
+    const userIds = [...new Set(bookings.map((b: any) => b.user_id).filter(Boolean))];
+    const staffIds = [...new Set(bookings.map((b: any) => b.staff_id).filter(Boolean))];
+    const bookingIds = bookings.map((b: any) => b.id);
+
+    const [profilesRes, staffRes, servicesRes, paymentsRes] = await Promise.all([
+      userIds.length > 0 ? supabase.from("profiles").select("id, full_name, phone, email").in("id", userIds) : { data: [], error: null },
+      staffIds.length > 0 ? supabase.from("salon_staff").select("id, name, role, avatar_url").in("id", staffIds) : { data: [], error: null },
+      bookingIds.length > 0 ? supabase.from("booking_services").select("id, booking_id, service_id, service_name, price").in("booking_id", bookingIds) : { data: [], error: null },
+      bookingIds.length > 0 ? supabase.from("payments").select("id, booking_id, amount, status, payment_method, currency").in("booking_id", bookingIds) : { data: [], error: null },
+    ]);
+
+    const profileMap = new Map((profilesRes.data ?? []).map((p: any) => [p.id, p]));
+    const staffMap = new Map((staffRes.data ?? []).map((s: any) => [s.id, s]));
+    const servicesByBooking = new Map<string, any[]>();
+    for (const svc of servicesRes.data ?? []) {
+      if (!servicesByBooking.has(svc.booking_id)) servicesByBooking.set(svc.booking_id, []);
+      servicesByBooking.get(svc.booking_id)!.push(svc);
+    }
+    const paymentByBooking = new Map<string, any>();
+    for (const pay of paymentsRes.data ?? []) {
+      if (!paymentByBooking.has(pay.booking_id)) paymentByBooking.set(pay.booking_id, pay);
+    }
+
+    let enriched = bookings.map((b: any) => ({
+      ...b,
+      user: profileMap.get(b.user_id) || null,
+      staff: b.staff_id ? (staffMap.get(b.staff_id) || null) : null,
+      booking_services: servicesByBooking.get(b.id) || [],
+      payment: paymentByBooking.get(b.id) || null,
+    }));
+
+    if (status && status !== "all") {
+      enriched = enriched.filter((b: any) => b.status === status);
+    }
+
+    res.json(enriched);
+  } catch (err: any) {
+    console.error("[SALON-MGMT] Bookings fetch error:", err);
+    res.status(500).json({ error: `Failed to fetch bookings: ${err.message}` });
+  }
 });
 
 salonManagementRouter.put("/bookings/:id/status", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.id);
-    if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
-    const { status } = req.body;
-    const valid = ["confirmed", "cancelled", "completed"];
-    if (!valid.includes(status)) { res.status(400).json({ error: `Invalid status: ${status}` }); return; }
-    const { data, error } = await supabase
+
+    const { data: booking, error: fetchErr } = await supabase
       .from("bookings")
-      .update({ status })
+      .select("*, salon:salons(owner_id)")
       .eq("id", req.params.id)
-      .eq("salon_id", salonId)
+      .single();
+    if (fetchErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (userRole !== "admin" && booking.salon?.owner_id !== user.id) {
+      res.status(403).json({ error: "Not authorized for this booking" }); return;
+    }
+
+    const { status: newStatus, cancellation_reason } = req.body;
+    if (!newStatus) { res.status(400).json({ error: "Status is required" }); return; }
+
+    const currentStatus = booking.status;
+    const validTransitions: Record<string, string[]> = {
+      pending: ["confirmed", "cancelled"],
+      confirmed: ["checked_in", "cancelled"],
+      checked_in: ["in_progress"],
+      in_progress: ["completed"],
+    };
+
+    if (newStatus === "cancelled") {
+      if (!cancellation_reason) { res.status(400).json({ error: "Cancellation reason is required" }); return; }
+    } else {
+      const allowed = validTransitions[currentStatus];
+      if (!allowed || !allowed.includes(newStatus)) {
+        res.status(400).json({ error: `Cannot transition from ${currentStatus} to ${newStatus}` });
+        return;
+      }
+    }
+
+    const updateData: any = { status: newStatus };
+    if (newStatus === "cancelled") {
+      updateData.cancellation_reason = cancellation_reason;
+      updateData.cancelled_at = new Date().toISOString();
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("bookings")
+      .update(updateData)
+      .eq("id", req.params.id)
       .select()
       .single();
-    if (error) { res.status(500).json({ error: error.message }); return; }
-    res.json(data);
-  } catch { res.status(500).json({ error: "Failed to update booking" }); }
+    if (updateErr) { res.status(500).json({ error: updateErr.message }); return; }
+
+    const { error: notifErr } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: booking.user_id,
+        type: "booking_status_changed",
+        title: "Booking status updated",
+        body: `Your booking is now ${newStatus}`,
+        data: { booking_id: req.params.id, status: newStatus },
+      });
+    if (notifErr) { console.log("Notification creation failed:", notifErr); }
+
+    res.json(updated);
+  } catch { res.status(500).json({ error: "Failed to update booking status" }); }
 });
 
 // ── CUSTOMERS ──
 salonManagementRouter.get("/customers", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.id);
+    let salonId: string | null;
+    if (userRole === "admin" && req.query.salonId) {
+      salonId = req.query.salonId as string;
+    } else {
+      salonId = await getSalonId(user.id);
+    }
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
     const { data: bookings } = await supabase
       .from("bookings")
@@ -574,8 +712,14 @@ salonManagementRouter.get("/customers", authMiddleware, ownerOrAdmin, async (req
 salonManagementRouter.get("/reviews", authMiddleware, ownerOrAdmin, async (req, res) => {
   try {
     const user = (req as any).user;
+    const userRole = (req as any).userRole;
     const supabase = getSupabaseServerClient();
-    const salonId = await getSalonId(user.id);
+    let salonId: string | null;
+    if (userRole === "admin" && req.query.salonId) {
+      salonId = req.query.salonId as string;
+    } else {
+      salonId = await getSalonId(user.id);
+    }
     if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
     const { data, error } = await supabase
       .from("reviews")
@@ -774,4 +918,270 @@ salonManagementRouter.get("/profile", authMiddleware, ownerOrAdmin, async (req, 
     if (!salon) { res.status(404).json({ error: "No salon found" }); return; }
     res.json(salon);
   } catch { res.status(500).json({ error: "Failed to fetch salon" }); }
+});
+
+// ── ASSIGN STAFF TO BOOKING ──
+salonManagementRouter.put("/bookings/:id/staff", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const supabase = getSupabaseServerClient();
+
+    const { data: booking, error: bookErr } = await supabase
+      .from("bookings")
+      .select("id, salon_id, booking_date, start_time, end_time")
+      .eq("id", req.params.id)
+      .single();
+    if (bookErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+
+    const salonId = booking.salon_id;
+    const { staff_id } = req.body;
+    if (!staff_id) { res.status(400).json({ error: "staff_id is required" }); return; }
+
+    const { data: staff, error: staffErr } = await supabase
+      .from("salon_staff")
+      .select("id, is_active")
+      .eq("id", staff_id)
+      .eq("salon_id", salonId)
+      .single();
+    if (staffErr || !staff) { res.status(404).json({ error: "Staff not found in this salon" }); return; }
+    if (!staff.is_active) { res.status(400).json({ error: "Staff member is not active" }); return; }
+
+    const { data: conflicting } = await supabase
+      .from("bookings")
+      .select("id, start_time, end_time")
+      .eq("staff_id", staff_id)
+      .eq("booking_date", booking.booking_date)
+      .neq("status", "cancelled")
+      .neq("id", req.params.id);
+
+    if (conflicting) {
+      const hasOverlap = conflicting.some(
+        (b: any) => b.start_time < booking.end_time && b.end_time > booking.start_time
+      );
+      if (hasOverlap) { res.status(409).json({ error: "Staff member already has a booking at this time" }); return; }
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ staff_id })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json(data);
+  } catch { res.status(500).json({ error: "Failed to assign staff" }); }
+});
+
+// ── RESCHEDULE BOOKING ──
+salonManagementRouter.put("/bookings/:id/reschedule", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const userRole = (req as any).userRole;
+    const supabase = getSupabaseServerClient();
+
+    const { data: booking, error: fetchErr } = await supabase
+      .from("bookings")
+      .select("*, salon:salons(owner_id)")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (userRole !== "admin" && booking.salon?.owner_id !== user.id) {
+      res.status(403).json({ error: "Not authorized for this booking" }); return;
+    }
+
+    const { booking_date, start_time, end_time } = req.body;
+    if (!booking_date || !start_time || !end_time) {
+      res.status(400).json({ error: "booking_date, start_time, and end_time are required" }); return;
+    }
+
+    const { data: overlapping } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("salon_id", booking.salon_id)
+      .eq("booking_date", booking_date)
+      .neq("status", "cancelled")
+      .neq("id", req.params.id)
+      .lt("start_time", end_time)
+      .gt("end_time", start_time);
+
+    if (overlapping && overlapping.length > 0) {
+      res.status(409).json({ error: "This time slot is already booked" }); return;
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ booking_date, start_time, end_time })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+
+    const { error: notifErr } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: booking.user_id,
+        type: "booking_rescheduled",
+        title: "Booking rescheduled",
+        body: `Your booking has been rescheduled to ${booking_date} at ${start_time}`,
+        data: { booking_id: req.params.id, booking_date, start_time, end_time },
+      });
+    if (notifErr) { console.log("Notification creation failed:", notifErr); }
+
+    res.json(data);
+  } catch { res.status(500).json({ error: "Failed to reschedule booking" }); }
+});
+
+// ── NOTIFICATIONS ──
+salonManagementRouter.post("/notifications", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { user_id, type, title, body, data } = req.body;
+    if (!user_id || !type || !title) {
+      res.status(400).json({ error: "user_id, type, and title are required" }); return;
+    }
+
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert({ user_id, type, title, body, data })
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.status(201).json(notification);
+  } catch { res.status(500).json({ error: "Failed to create notification" }); }
+});
+
+salonManagementRouter.get("/notifications", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const userRole = (req as any).userRole;
+    const supabase = getSupabaseServerClient();
+    let salonId: string | null;
+    if (userRole === "admin" && req.query.salonId) {
+      salonId = req.query.salonId as string;
+    } else {
+      salonId = await getSalonId(user.id);
+    }
+    if (!salonId) { res.status(404).json({ error: "No salon found" }); return; }
+
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select("user_id")
+      .eq("salon_id", salonId)
+      .not("user_id", "is", null);
+
+    const userIds = [...new Set((bookings ?? []).map((b: any) => b.user_id))];
+    if (userIds.length === 0) { res.json([]); return; }
+
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: false });
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json(data ?? []);
+  } catch { res.status(500).json({ error: "Failed to fetch notifications" }); }
+});
+
+// ── BOOKING STATUS SHORTCUTS ──
+salonManagementRouter.put("/bookings/:id/check-in", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const userRole = (req as any).userRole;
+    const supabase = getSupabaseServerClient();
+
+    const { data: booking, error: fetchErr } = await supabase
+      .from("bookings")
+      .select("status, salon:salons(owner_id)")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (userRole !== "admin" && booking.salon?.owner_id !== user.id) {
+      res.status(403).json({ error: "Not authorized for this booking" }); return;
+    }
+    if (booking.status !== "confirmed") {
+      res.status(400).json({ error: "Booking must be confirmed before check-in" }); return;
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ status: "checked_in" })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json(data);
+  } catch { res.status(500).json({ error: "Failed to check in" }); }
+});
+
+salonManagementRouter.put("/bookings/:id/start-service", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const userRole = (req as any).userRole;
+    const supabase = getSupabaseServerClient();
+
+    const { data: booking, error: fetchErr } = await supabase
+      .from("bookings")
+      .select("status, salon:salons(owner_id)")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (userRole !== "admin" && booking.salon?.owner_id !== user.id) {
+      res.status(403).json({ error: "Not authorized for this booking" }); return;
+    }
+    if (booking.status !== "checked_in") {
+      res.status(400).json({ error: "Booking must be checked in before starting service" }); return;
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ status: "in_progress" })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json(data);
+  } catch { res.status(500).json({ error: "Failed to start service" }); }
+});
+
+salonManagementRouter.put("/bookings/:id/complete-service", authMiddleware, ownerOrAdmin, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    const userRole = (req as any).userRole;
+    const supabase = getSupabaseServerClient();
+
+    const { data: booking, error: fetchErr } = await supabase
+      .from("bookings")
+      .select("status, user_id, salon:salons(owner_id)")
+      .eq("id", req.params.id)
+      .single();
+    if (fetchErr || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (userRole !== "admin" && booking.salon?.owner_id !== user.id) {
+      res.status(403).json({ error: "Not authorized for this booking" }); return;
+    }
+    if (booking.status !== "in_progress") {
+      res.status(400).json({ error: "Booking must be in progress before completing" }); return;
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update({ status: "completed" })
+      .eq("id", req.params.id)
+      .select()
+      .single();
+    if (error) { res.status(500).json({ error: error.message }); return; }
+
+    const { error: payErr } = await supabase
+      .from("payments")
+      .update({ status: "completed" })
+      .eq("booking_id", req.params.id);
+    if (payErr) { console.log("Payment update failed:", payErr); }
+
+    const { data: fullBooking } = await supabase
+      .from("bookings")
+      .select("*, payment:payments(*)")
+      .eq("id", req.params.id)
+      .single();
+
+    res.json(fullBooking);
+  } catch { res.status(500).json({ error: "Failed to complete service" }); }
 });

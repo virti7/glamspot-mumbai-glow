@@ -11,7 +11,7 @@ export function Tour360() {
   const cur = TOUR_SALONS[idx];
 
   return (
-    <section className="bg-[#FFF5F8] text-[#111] py-24 px-6 md:px-[60px]">
+    <section className="bg-[#FAFAFB] text-[#111] py-24 px-6 md:px-[60px]">
       <h2 className="font-display text-center text-[#111] text-4xl md:text-5xl">
         Step Inside Before You Book
       </h2>
@@ -79,7 +79,7 @@ export function Tour360() {
             style={{
               width: 200,
               height: 110,
-              border: `3px solid ${idx === i ? "#F5C842" : "transparent"}`,
+              border: `3px solid ${idx === i ? "#EC4899" : "transparent"}`,
             }}
           >
             <img

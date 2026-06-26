@@ -39,7 +39,7 @@ const collageImages = [
 ];
 
 const floatingCards = [
-  { icon: Star, label: "4.9", sub: "Rated", color: "#F5C842", top: 20, right: 190 },
+  { icon: Star, label: "4.9", sub: "Rated", color: "#F59E0B", top: 20, right: 190 },
   { icon: BadgeCheck, label: "Verified", sub: "Salons", color: "#22C55E", top: 190, right: 10 },
   { icon: TrendingUp, label: "Trending", sub: "Bookings", color: "#EC4899", top: 260, right: 140 },
 ];

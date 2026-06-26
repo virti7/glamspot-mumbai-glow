@@ -3,7 +3,7 @@ import { TESTIMONIALS } from "@/data/testimonials";
 
 export function Testimonials() {
   return (
-    <section className="bg-white text-[#111] py-24 px-6 md:px-[60px]">
+    <section className="bg-[#FAFAFB] text-[#111] py-24 px-6 md:px-[60px]">
       <h2 className="font-display text-center text-[#111] text-4xl md:text-5xl">
         Mumbai Trusts GlamSpot
       </h2>
@@ -11,10 +11,10 @@ export function Testimonials() {
 
       <div className="grid md:grid-cols-3 gap-6 mt-12">
         {TESTIMONIALS.map((t) => (
-          <div key={t.name} className="bg-[#F8F8F8] rounded-[24px] p-8">
+          <div key={t.name} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-8">
             <div className="flex gap-0.5">
               {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} size={16} fill="#F5C842" color="#F5C842" />
+                <Star key={s} size={16} fill="#F59E0B" color="#F59E0B" />
               ))}
             </div>
             <p className="text-[#333] text-[16px] italic leading-[1.7] mt-4">"{t.quote}"</p>

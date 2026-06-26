@@ -60,7 +60,7 @@ export default function SalonSearch({ filters, onFilterChange }: SalonSearchProp
       <div ref={sentinelRef} className="h-1" />
       <div
         className={`transition-all duration-300 z-40 ${
-          isSticky ? "fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] py-3" : "relative"
+          isSticky ? "fixed top-20 left-0 right-0 bg-white/95 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.08)] py-3" : "relative"
         }`}
       >
         <div className={`${isSticky ? "max-w-7xl mx-auto px-6" : "max-w-6xl mx-auto px-6"}`}>
@@ -68,11 +68,11 @@ export default function SalonSearch({ filters, onFilterChange }: SalonSearchProp
             className={`${
               isSticky
                 ? "bg-transparent"
-                : "bg-white rounded-[24px] shadow-[0_10px_50px_rgba(0,0,0,0.08)] border border-gray-100"
+                : "bg-white rounded-2xl shadow-sm border border-[#E5E7EB]/60"
             } p-3`}
           >
             <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
-              <div className="flex-1 flex items-center gap-3 px-4 py-2 lg:border-r border-gray-100 min-w-[200px]">
+              <div className="flex-1 flex items-center gap-3 px-4 py-2 lg:border-r border-[#E5E7EB]/60 min-w-[200px] focus-within:ring-2 focus-within:ring-[#EC4899]/20 focus-within:rounded-xl transition-all">
                 <Search size={18} className="text-gray-400 shrink-0" />
                 <input
                   type="text"
@@ -82,7 +82,7 @@ export default function SalonSearch({ filters, onFilterChange }: SalonSearchProp
                   className="w-full text-[14px] text-[#111] placeholder:text-gray-400 focus:outline-none bg-transparent"
                 />
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 lg:border-r border-gray-100">
+              <div className="flex items-center gap-2 px-4 py-2 lg:border-r border-[#E5E7EB]/60">
                 <MapPin size={16} className="text-gray-400 shrink-0" />
                 <select
                   value={filters.locality}
@@ -94,7 +94,7 @@ export default function SalonSearch({ filters, onFilterChange }: SalonSearchProp
                   ))}
                 </select>
               </div>
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 lg:border-r border-gray-100">
+              <div className="hidden md:flex items-center gap-2 px-4 py-2 lg:border-r border-[#E5E7EB]/60">
                 <Scissors size={16} className="text-gray-400 shrink-0" />
                 <select
                   value={filters.service}
@@ -106,7 +106,7 @@ export default function SalonSearch({ filters, onFilterChange }: SalonSearchProp
                   ))}
                 </select>
               </div>
-              <div className="hidden lg:flex items-center gap-2 px-4 py-2 lg:border-r border-gray-100">
+              <div className="hidden lg:flex items-center gap-2 px-4 py-2 lg:border-r border-[#E5E7EB]/60">
                 <SlidersHorizontal size={16} className="text-gray-400 shrink-0" />
                 <select
                   value={filters.priceRange}

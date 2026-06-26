@@ -117,7 +117,7 @@ export function QuickAccessCards() {
           <Link
             key={card.title}
             href={card.href}
-            className="relative flex overflow-hidden rounded-[18px] h-[170px] group cursor-pointer hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(0,0,0,0.1)] transition-all duration-250"
+            className="relative flex overflow-hidden rounded-2xl h-[170px] group cursor-pointer hover:-translate-y-1 hover:shadow-lg transition-all duration-250"
             style={{ background: card.gradient }}
           >
             {/* Left Content */}

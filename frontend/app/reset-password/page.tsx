@@ -58,21 +58,21 @@ export default function ResetPasswordPage() {
   return (
     <AuthLayout imageUrl="https://images.unsplash.com/photo-1551392505-f4056032826e?w=1000&q=90">
       <div className="flex flex-col items-start">
-        <h1 className="font-display font-bold text-[32px] md:text-[34px] text-[#111] leading-[1.1] tracking-[-0.01em]">
+        <h1 className="font-display font-bold text-[32px] md:text-[34px] text-[#111827] leading-[1.1] tracking-[-0.01em]">
           Reset Password
         </h1>
-        <p className="text-[#6B7280] text-[14px] leading-[1.55] mt-2.5">
+        <p className="text-sm text-[#6B7280] leading-relaxed mt-2.5">
           Enter your new password below.
         </p>
 
         {error && (
-          <div className="w-full mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">
+          <div className="w-full mt-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">
             {error}
           </div>
         )}
 
         {success ? (
-          <div className="w-full mt-6 p-6 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[14px]">
+          <div className="w-full mt-6 p-6 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm">
             Password updated successfully! Redirecting to sign in...
           </div>
         ) : (
@@ -95,7 +95,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-[48px] bg-[#111] text-white rounded-xl text-[15px] font-semibold hover:bg-[#333] active:scale-[0.98] transition-all mt-1 disabled:opacity-50"
+              className="w-full h-12 bg-[#EC4899] text-white rounded-xl text-sm font-semibold hover:bg-[#DB2777] transition-all mt-1 disabled:opacity-50"
             >
               {loading ? "Updating..." : "Reset Password"}
             </button>

@@ -45,7 +45,7 @@ export function Team() {
                 <p className="font-display text-white font-bold text-[22px] sm:text-[26px] opacity-0 group-hover:opacity-100 transition-opacity duration-400">
                   {s.name}
                 </p>
-                <span className="inline-block mt-2 rounded-full px-3 py-1 text-[11px] bg-[rgba(245,200,66,0.2)] text-[#F5C842] opacity-0 group-hover:opacity-100 transition-opacity duration-400">
+                <span className="inline-block mt-2 rounded-full px-3 py-1 text-[11px] bg-[rgba(236,72,153,0.2)] text-[#EC4899] opacity-0 group-hover:opacity-100 transition-opacity duration-400">
                   {s.role}
                 </span>
                 <p className="text-[#bbb] text-[12px] mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-400">

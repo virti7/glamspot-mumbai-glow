@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { salonService } from "@/services/salon.service";
+import { getAccessToken } from "@/lib/auth";
 import {
   DollarSign, Calendar, Users, Star, TrendingUp, Store,
   ArrowUpRight, Clock, ChevronRight,
@@ -42,10 +43,13 @@ export default function SalonDashboardPage() {
     if (!profile) { setLoading(false); return; }
     const load = async () => {
       try {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
         const [salonData, statsData, chartRes] = await Promise.all([
           salonService.getOwnerSalon(),
-          fetch("/api/salon-management/stats").then((r) => r.json()),
-          fetch("/api/salon-management/charts?days=30").then((r) => r.json()),
+          fetch("/api/salon-management/stats", { headers }).then((r) => r.json()),
+          fetch("/api/salon-management/charts?days=30", { headers }).then((r) => r.json()),
         ]);
         setSalon(salonData);
         setStats(statsData);
@@ -62,7 +66,7 @@ export default function SalonDashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-gray-400">Loading dashboard...</div>
+        <div className="animate-pulse rounded-xl bg-[#F3F4F6] h-8 w-48" />
       </div>
     );
   }
@@ -70,14 +74,14 @@ export default function SalonDashboardPage() {
   if (error) {
     return (
       <div className="text-center py-20">
-        <Store size={48} className="mx-auto text-gray-300 mb-4" />
-        <h2 className="font-display text-[20px] font-bold text-[#111] mb-2">No Salon Found</h2>
-        <p className="text-gray-400 text-[14px] mb-6 max-w-md mx-auto">
+        <Store size={48} className="mx-auto text-[#9CA3AF] mb-4" />
+        <h2 className="font-display text-[20px] font-bold text-[#111827] mb-2">No Salon Found</h2>
+        <p className="text-[#6B7280] text-[14px] mb-6 max-w-md mx-auto">
           You don&apos;t own any salons yet. Search for your salon and submit an ownership claim.
         </p>
         <Link
           href="/salon-dashboard/profile"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#EC4899] text-white text-[13px] font-semibold"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#EC4899] text-white text-sm font-semibold hover:bg-[#DB2777] transition-all hover:shadow-lg hover:shadow-[#EC4899]/25"
         >
           Claim Your Salon
           <ChevronRight size={14} />
@@ -103,12 +107,12 @@ export default function SalonDashboardPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-[#111] text-2xl md:text-3xl font-bold">Dashboard</h1>
-          <p className="text-[#6B7280] text-[14px] mt-1">{salon?.name || "Your Salon"}</p>
+          <h1 className="font-display text-[#111827] text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <p className="text-[#6B7280] text-sm mt-1">{salon?.name || "Your Salon"}</p>
         </div>
         <Link
           href="/salons"
-          className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#111] text-white text-[12px] font-semibold hover:bg-[#333] transition-all"
+          className="hidden md:flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E5E7EB] text-[#6B7280] text-sm hover:bg-[#FAFAFB] transition-all"
         >
           <Store size={14} />
           View Public Page
@@ -119,14 +123,14 @@ export default function SalonDashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
         {statCards.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl p-4 border border-gray-100">
+          <div key={stat.label} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-2">
               <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: stat.color + "15" }}>
                 <stat.icon size={16} style={{ color: stat.color }} />
               </div>
             </div>
-            <p className="text-lg font-bold text-[#111]">{stat.value}</p>
-            <p className="text-[11px] text-gray-400 mt-0.5">{stat.label}</p>
+            <p className="text-lg font-bold text-[#111827]">{stat.value}</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">{stat.label}</p>
           </div>
         ))}
       </div>
@@ -134,9 +138,9 @@ export default function SalonDashboardPage() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue Trend */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#111] text-[15px]">Revenue (7 days)</h3>
+            <h3 className="font-semibold text-[#111827] text-[15px]">Revenue (7 days)</h3>
             <span className="text-[13px] font-bold text-green-600">₹{totalRevenue.toLocaleString()}</span>
           </div>
           {chartData.length > 0 ? (
@@ -153,14 +157,14 @@ export default function SalonDashboardPage() {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[220px] flex items-center justify-center text-gray-300 text-[13px]">No data yet</div>
+            <div className="h-[220px] flex items-center justify-center text-[#9CA3AF] text-[13px]">No data yet</div>
           )}
         </div>
 
         {/* Bookings Trend */}
-        <div className="bg-white rounded-xl border border-gray-100 p-5">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#111] text-[15px]">Bookings (7 days)</h3>
+            <h3 className="font-semibold text-[#111827] text-[15px]">Bookings (7 days)</h3>
             <span className="text-[13px] font-bold text-[#8B5CF6]">{totalBookings} total</span>
           </div>
           {chartData.length > 0 ? (
@@ -175,7 +179,7 @@ export default function SalonDashboardPage() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[220px] flex items-center justify-center text-gray-300 text-[13px]">No data yet</div>
+            <div className="h-[220px] flex items-center justify-center text-[#9CA3AF] text-[13px]">No data yet</div>
           )}
         </div>
       </div>
@@ -191,13 +195,13 @@ export default function SalonDashboardPage() {
           <Link
             key={link.label}
             href={link.href}
-            className="bg-white rounded-xl p-4 border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all group"
+            className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 shadow-sm hover:shadow-lg transition-shadow group"
           >
             <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-2" style={{ backgroundColor: link.color + "15" }}>
               <div className="w-4 h-4 rounded-full" style={{ backgroundColor: link.color }} />
             </div>
-            <h3 className="font-semibold text-[#111] text-[14px] group-hover:text-[#EC4899] transition-colors">{link.label}</h3>
-            <p className="text-[12px] text-gray-400 mt-0.5">{link.desc}</p>
+            <h3 className="font-semibold text-[#111827] text-[14px] group-hover:text-[#EC4899] transition-colors">{link.label}</h3>
+            <p className="text-[12px] text-[#9CA3AF] mt-0.5">{link.desc}</p>
           </Link>
         ))}
       </div>

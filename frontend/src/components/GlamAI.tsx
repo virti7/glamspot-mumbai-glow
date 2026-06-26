@@ -61,8 +61,8 @@ export function GlamAI() {
 
   return (
     <section id="glamai" className="bg-white">
-      <div className="bg-[#F5C842] py-[10px] px-6 md:px-[60px] relative overflow-hidden">
-        <p className="text-[#111] text-[13px] font-bold uppercase tracking-[0.15em] text-center">
+      <div className="bg-gradient-to-r from-[#EC4899] to-[#DB2777] py-3 px-6 md:px-[60px] relative overflow-hidden">
+        <p className="text-white text-xs font-bold uppercase tracking-[0.15em] text-center">
           <Sparkles size={14} className="inline mr-1.5" /> INTRODUCING GLAMAI — MUMBAI'S FIRST AI
           BEAUTY DIAGNOSIS
         </p>
@@ -70,7 +70,7 @@ export function GlamAI() {
       </div>
 
       <div
-        className="mx-6 md:mx-[60px] my-8 bg-[#111] rounded-[32px] px-6 md:px-[40px] py-[36px] relative overflow-hidden"
+        className="mx-6 md:mx-[60px] my-8 bg-[#111827] rounded-3xl px-8 md:px-12 py-10 relative overflow-hidden shadow-2xl border border-[#222]/10"
         style={{ boxShadow: "0 32px 80px rgba(0,0,0,0.15)" }}
       >
         <img
@@ -79,26 +79,26 @@ export function GlamAI() {
           className="absolute inset-0 w-full h-full object-cover opacity-[0.03] blur-[20px] pointer-events-none"
         />
 
-        <div className="text-center max-w-[700px] mx-auto relative z-10">
-          <h2 className="font-display font-bold text-[36px] md:text-[48px] leading-[1.1] gold-shimmer-text">
+        <div className="text-center max-w-2xl mx-auto relative z-10">
+          <h2 className="font-display font-bold text-4xl md:text-5xl leading-[1.1] gold-shimmer-text">
             GlamAI
           </h2>
-          <h3 className="font-display text-white text-[22px] md:text-[28px] mt-1">
+          <h3 className="font-display text-white text-2xl mt-2">
             Reads Your Hair &amp; Skin.
           </h3>
-          <p className="text-[#888] text-[14px] mt-2 max-w-[450px] mx-auto text-center">
+          <p className="text-sm text-[#9CA3AF] mt-3 max-w-lg mx-auto text-center">
             Upload one photo. Get a complete beauty health report and find Mumbai salons that treat
             your exact condition.
           </p>
         </div>
 
-        <div className="flex flex-wrap justify-center gap-2 mt-5 relative z-10">
+        <div className="flex flex-wrap justify-center gap-2 mt-6 relative z-10">
           {FEATURE_PILLS.map((p) => (
             <span
               key={p.l}
-              className="bg-[#1A1A1A] border border-[#2A2A2A] rounded-full px-4 py-1.5 text-white text-[12px] flex items-center gap-1.5 hover:border-[#F5C842] transition cursor-default"
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs flex items-center gap-1.5 hover:border-[#EC4899] transition cursor-default"
             >
-              <span className="text-[#F5C842]">{p.icon}</span> {p.l}
+              <span className="text-[#EC4899]">{p.icon}</span> {p.l}
             </span>
           ))}
         </div>
@@ -107,7 +107,7 @@ export function GlamAI() {
           {BEFORE_AFTER_CARDS.map((c, i) => (
             <div
               key={i}
-              className="relative w-[120px] h-[160px] rounded-[14px] overflow-hidden flex-shrink-0"
+              className="relative w-[120px] h-[160px] rounded-xl overflow-hidden shadow-lg flex-shrink-0"
             >
               <img
                 src={c.image}
@@ -131,11 +131,11 @@ export function GlamAI() {
           ))}
         </div>
 
-        <p className="text-center text-[#888] text-[12px] mt-3 relative z-10">
+        <p className="text-center text-[#9CA3AF] text-xs mt-3 relative z-10">
           See what GlamAI can detect <ArrowRight size={10} className="inline" />
         </p>
 
-        <div className="grid lg:grid-cols-2 gap-5 mt-6 max-w-5xl mx-auto relative z-10">
+        <div className="grid lg:grid-cols-2 gap-6 mt-8 max-w-5xl mx-auto relative z-10">
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -148,10 +148,10 @@ export function GlamAI() {
               const f = e.dataTransfer.files?.[0];
               if (f) handleFile(f);
             }}
-            className="rounded-[24px] p-8 md:p-10 min-h-[360px] flex flex-col items-center justify-center text-center transition-colors"
+            className="rounded-2xl p-10 min-h-[400px] flex flex-col items-center justify-center text-center transition-colors"
             style={{
               background: "#0D0D0D",
-              border: `2px dashed ${dragOver ? "#F5C842" : "#333"}`,
+              border: `2px dashed ${dragOver ? "#EC4899" : "#333"}`,
             }}
           >
             {state === "idle" && (
@@ -159,29 +159,29 @@ export function GlamAI() {
                 <div className="relative w-[80px] h-[80px] flex items-center justify-center">
                   <span
                     className="absolute inset-0 rounded-full pulse-ring"
-                    style={{ background: "rgba(245,200,66,0.3)" }}
+                    style={{ background: "rgba(236,72,153,0.3)" }}
                   />
                   <span
                     className="absolute inset-0 rounded-full pulse-ring-2"
-                    style={{ background: "rgba(245,200,66,0.2)" }}
+                    style={{ background: "rgba(236,72,153,0.2)" }}
                   />
                   <span
                     className="absolute inset-0 rounded-full pulse-ring-3"
-                    style={{ background: "rgba(245,200,66,0.15)" }}
+                    style={{ background: "rgba(236,72,153,0.15)" }}
                   />
-                  <span className="relative z-10 text-[#F5C842]">
+                  <span className="relative z-10 text-[#EC4899]">
                     <Camera size={28} />
                   </span>
                 </div>
-                <h3 className="font-display text-white text-[18px] mt-4">
+                <h3 className="font-display text-white text-lg mt-4">
                   {dragOver ? "Drop it here" : "Upload Your Hair or Skin Photo"}
                 </h3>
-                <p className="text-[#888] text-[13px] mt-1.5">
+                <p className="text-xs text-[#6B7280] mt-1.5">
                   Clear photo in good lighting gives best results
                 </p>
                 <button
                   onClick={() => inputRef.current?.click()}
-                  className="mt-4 bg-white text-[#111] rounded-full px-6 py-2.5 text-[13px] font-semibold hover:bg-[#F5C842] hover:text-[#111] transition"
+                  className="mt-4 bg-white text-[#111827] rounded-xl px-6 py-3 text-sm font-semibold hover:bg-[#EC4899] hover:text-white transition-all"
                 >
                   Choose Photo
                 </button>
@@ -205,13 +205,13 @@ export function GlamAI() {
                   />
                   <div
                     className="absolute -inset-2 rounded-full spin-ring"
-                    style={{ border: "3px solid transparent", borderTopColor: "#F5C842" }}
+                    style={{ border: "3px solid transparent", borderTopColor: "#EC4899" }}
                   />
                   <div className="absolute inset-0 rounded-full overflow-hidden">
                     <div
                       className="scan-line absolute left-0 right-0 h-[3px]"
                       style={{
-                        background: "linear-gradient(90deg, transparent, #F5C842, transparent)",
+                        background: "linear-gradient(90deg, transparent, #EC4899, transparent)",
                       }}
                     />
                   </div>
@@ -255,7 +255,7 @@ export function GlamAI() {
                 <p className="text-white text-[14px] mt-3">{error}</p>
                 <button
                   onClick={reset}
-                  className="mt-4 bg-white text-[#111] rounded-full px-5 py-2 text-[13px] font-semibold"
+                  className="mt-4 bg-white text-[#111827] rounded-xl px-5 py-2 text-[13px] font-semibold"
                 >
                   Try Again
                 </button>
@@ -263,16 +263,16 @@ export function GlamAI() {
             )}
           </div>
 
-          <div className="min-h-[360px]">
+          <div className="min-h-[400px]">
             {state === "idle" || state === "error" ? (
               <div className="h-full flex flex-col items-center justify-center text-center">
-                <span className="text-[#F5C842]">
+                <span className="text-[#EC4899]">
                   <Sparkles size={32} />
                 </span>
-                <h3 className="font-display text-white text-[20px] mt-3">
+                <h3 className="font-display text-white text-lg mt-3">
                   Your GlamAI Report Will Appear Here
                 </h3>
-                <p className="text-[#888] text-[13px] mt-1.5 max-w-sm">
+                <p className="text-xs text-[#6B7280] mt-1.5 max-w-sm">
                   Upload a photo to get your personalized beauty diagnosis
                 </p>
                 <div className="w-full max-w-sm mt-5 space-y-2 blur-sm select-none">

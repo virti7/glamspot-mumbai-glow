@@ -55,7 +55,7 @@ export default function FeaturedSalons({ salons, favorites, onToggleFavorite, us
         {showLeftArrow && (
           <button
             onClick={() => scrollCarousel("left")}
-            className="absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)]"
+            className="absolute -left-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white shadow-lg border border-[#E5E7EB]/60 flex items-center justify-center hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 hover:shadow-lg"
           >
             <ChevronLeft size={20} className="text-[#111]" />
           </button>
@@ -63,7 +63,7 @@ export default function FeaturedSalons({ salons, favorites, onToggleFavorite, us
         {showRightArrow && (
           <button
             onClick={() => scrollCarousel("right")}
-            className="absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white shadow-lg border border-gray-100 flex items-center justify-center hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 hover:shadow-[0_8px_25px_rgba(0,0,0,0.1)]"
+            className="absolute -right-5 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white shadow-lg border border-[#E5E7EB]/60 flex items-center justify-center hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100 hover:shadow-lg"
           >
             <ChevronRight size={20} className="text-[#111]" />
           </button>

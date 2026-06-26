@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import { EXCLUSIVE_SERVICES } from "@/data/exclusive-services";
 
-export function ExclusiveHairServices() {
+export function ExclusiveHairServices({ onBook }: { onBook?: () => void }) {
   const [slideIdx, setSlideIdx] = useState(0);
   const totalSlides = Math.ceil(EXCLUSIVE_SERVICES.length / 3);
 
@@ -28,13 +28,13 @@ export function ExclusiveHairServices() {
           <div className="flex gap-3">
             <button
               onClick={prev}
-              className="w-[48px] h-[48px] rounded-full border border-[#F5C842] text-[#F5C842] flex items-center justify-center hover:bg-[#F5C842] hover:text-[#111] transition"
+              className="w-[48px] h-[48px] rounded-full border border-[#EC4899] text-[#EC4899] flex items-center justify-center hover:bg-[#EC4899] hover:text-white transition-all duration-200"
             >
               <ChevronLeft size={20} />
             </button>
             <button
               onClick={next}
-              className="w-[48px] h-[48px] rounded-full border border-[#F5C842] text-[#F5C842] flex items-center justify-center hover:bg-[#F5C842] hover:text-[#111] transition"
+              className="w-[48px] h-[48px] rounded-full border border-[#EC4899] text-[#EC4899] flex items-center justify-center hover:bg-[#EC4899] hover:text-white transition-all duration-200"
             >
               <ChevronRight size={20} />
             </button>
@@ -67,14 +67,17 @@ export function ExclusiveHairServices() {
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors duration-300" />
 
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span className="bg-[#F5C842] text-[#111] rounded-full px-5 py-2 text-[13px] font-semibold">
+                    <button
+                      onClick={onBook}
+                      className="bg-[#EC4899] text-white rounded-full px-5 py-2 text-[13px] font-semibold hover:bg-[#DB2777] transition-colors"
+                    >
                       Book Now <ArrowRight size={12} className="inline" />
-                    </span>
+                    </button>
                   </div>
 
                   <div className="absolute inset-x-0 bottom-0 bg-[#111] px-6 py-5">
                     <p className="font-display text-white font-bold text-[22px]">{svc.name}</p>
-                    <p className="text-[#F5C842] uppercase text-[11px] tracking-[0.2em] mt-1">
+                    <p className="text-[#EC4899] uppercase text-[11px] tracking-[0.2em] mt-1">
                       {svc.category}
                     </p>
                   </div>
@@ -94,7 +97,7 @@ export function ExclusiveHairServices() {
             style={{
               height: 6,
               width: slideIdx === i ? 24 : 8,
-              background: slideIdx === i ? "#F5C842" : "#333",
+              background: slideIdx === i ? "#EC4899" : "#333",
             }}
           />
         ))}

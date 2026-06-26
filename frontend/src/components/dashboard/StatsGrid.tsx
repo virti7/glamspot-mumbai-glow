@@ -84,7 +84,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
         <div className="relative">
           <button
             onClick={() => setShowFilter(!showFilter)}
-            className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-200 text-[12.5px] font-medium text-gray-600 hover:border-gray-300 hover:text-gray-800 transition-all duration-200 shadow-[0_1px_4px_rgba(0,0,0,0.04)]"
+            className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-[#E5E7EB]/60 text-[12.5px] font-medium text-gray-600 hover:border-[#EC4899]/30 hover:text-[#EC4899] transition-all duration-200 shadow-sm"
           >
             <Calendar size={13} className="text-gray-400" />
             {activeFilter}
@@ -94,7 +94,7 @@ export function StatsGrid({ stats }: StatsGridProps) {
           {showFilter && (
             <>
               <div className="fixed inset-0 z-30" onClick={() => setShowFilter(false)} />
-              <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.08)] border border-gray-100 py-1.5 z-40 modal-in">
+              <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-xl shadow-lg border border-[#E5E7EB]/60 py-1.5 z-40 modal-in">
                 {filters.map((f) => (
                   <button
                     key={f}

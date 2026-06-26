@@ -18,11 +18,11 @@ adminRouter.get("/dashboard", async (_req, res) => {
     const [users, salons, bookings, claims, reviews, monthBookings, recentBookings, recentReviews, recentUsers, pendingClaimsList] = await Promise.all([
       supabase.from("profiles").select("id, role, created_at"),
       supabase.from("salons").select("id, name, slug, is_claimed, is_active, rating, city, cover_image, created_at, owner_id, owner:profiles(full_name)"),
-      supabase.from("bookings").select("id, salon_id, total_amount, status, created_at, booking_date, booking_time, salon:salons(name), customer:profiles(full_name)"),
+      supabase.from("bookings").select("id, salon_id, total_amount, status, created_at, booking_date, start_time, salon:salons(name), user:profiles(full_name)"),
       supabase.from("salon_claims").select("id, status, created_at, salon_name"),
       supabase.from("reviews").select("id, rating, comment, created_at, salon:salons(name), user:profiles(full_name)"),
       supabase.from("bookings").select("id, total_amount").gte("created_at", monthStart),
-      supabase.from("bookings").select("id, salon_id, booking_date, booking_time, status, total_amount, created_at, salon:salons(name), customer:profiles(full_name)").order("created_at", { ascending: false }).limit(10),
+      supabase.from("bookings").select("id, salon_id, booking_date, start_time, status, total_amount, created_at, salon:salons(name), user:profiles(full_name)").order("created_at", { ascending: false }).limit(10),
       supabase.from("reviews").select("id, rating, comment, created_at, salon:salons(name), user:profiles(full_name)").order("created_at", { ascending: false }).limit(10),
       supabase.from("profiles").select("id, full_name, email, role, created_at").order("created_at", { ascending: false }).limit(10),
       supabase.from("salon_claims").select("*, salon:salons(name, slug)").eq("status", "pending").order("created_at", { ascending: false }).limit(5),
@@ -87,8 +87,8 @@ adminRouter.get("/dashboard", async (_req, res) => {
         averageRating: avgRating,
       },
       recentBookings: (recentBookings.data ?? []).map((b: any) => ({
-        id: b.id, salon: b.salon?.name, customer: b.customer?.full_name,
-        date: b.booking_date, time: b.booking_time, status: b.status, amount: b.total_amount,
+        id: b.id, salon: b.salon?.name, customer: b.user?.full_name,
+        date: b.booking_date, time: b.start_time, status: b.status, amount: b.total_amount,
       })),
       recentReviews: (recentReviews.data ?? []).map((r: any) => ({
         id: r.id, salon: r.salon?.name, user: r.user?.full_name,
@@ -477,30 +477,229 @@ adminRouter.get("/ownership-history", async (_req, res) => {
 });
 
 // ── BOOKINGS ──
-adminRouter.get("/bookings", async (_req, res) => {
+
+const BOOKING_SELECT = "*, salon:salons(name, slug, locality, city, cover_image, phone), user:profiles(full_name, email, phone), booking_services(*), payment:payments(*), staff:salon_staff(id, name, role, avatar_url)";
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["checked_in", "completed", "cancelled"],
+  checked_in: ["in_progress", "cancelled"],
+  in_progress: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+};
+
+adminRouter.get("/bookings/stats", async (_req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [totalRes, todayRes, pendingRes, confirmedRes, completedRes, cancelledRes, completedRevenueRes, todayRevenueRes] = await Promise.all([
+      supabase.from("bookings").select("id", { count: "exact", head: true }),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).gte("created_at", today),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "pending"),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "completed"),
+      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
+      supabase.from("bookings").select("total_amount").eq("status", "completed"),
+      supabase.from("bookings").select("total_amount").eq("status", "completed").gte("created_at", today),
+    ]);
+
+    const totalRevenue = (completedRevenueRes.data ?? []).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const todayRevenue = (todayRevenueRes.data ?? []).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const totalCount = totalRes.count ?? 0;
+    const averageBookingValue = totalCount > 0 ? +(totalRevenue / totalCount).toFixed(2) : 0;
+
+    res.json({
+      totalBookings: totalRes.count ?? 0,
+      todayBookings: todayRes.count ?? 0,
+      pendingBookings: pendingRes.count ?? 0,
+      confirmedBookings: confirmedRes.count ?? 0,
+      completedBookings: completedRes.count ?? 0,
+      cancelledBookings: cancelledRes.count ?? 0,
+      totalRevenue,
+      todayRevenue,
+      averageBookingValue,
+    });
+  } catch { res.status(500).json({ error: "Failed to fetch booking stats" }); }
+});
+
+adminRouter.get("/bookings/export", async (_req, res) => {
   try {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("bookings")
-      .select("*, salon:salons(name, slug), customer:profiles(full_name, email)")
+      .select(BOOKING_SELECT)
       .order("created_at", { ascending: false });
     if (error) { res.status(500).json({ error: error.message }); return; }
-    const enriched = (data ?? []).map((b: any) => ({
-      ...b, service_name: b.service_name || (b as any).service || "General",
-    }));
-    res.json(enriched);
+
+    const esc = (v: any) => {
+      if (v === null || v === undefined) return "";
+      const s = String(v);
+      return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+
+    const headers = "Booking Reference,Customer Name,Customer Phone,Customer Email,Salon,Services,Booking Date,Start Time,End Time,Amount,Discount,Tax,Platform Fee,Total,Payment Status,Booking Status,Created At";
+    const rows = (data ?? []).map((b: any) => [
+      esc(b.booking_reference || b.id),
+      esc(b.customer_name || b.user?.full_name || ""),
+      esc(b.customer_phone || b.user?.phone || ""),
+      esc(b.customer_email || b.user?.email || ""),
+      esc(b.salon?.name || ""),
+      esc((b.booking_services ?? []).map((s: any) => s.service_name || s.name || "").join("; ")),
+      esc(b.booking_date || ""),
+      esc(b.start_time || ""),
+      esc(b.end_time || ""),
+      esc(b.subtotal ?? 0),
+      esc(b.discount_amount ?? 0),
+      esc(b.tax_amount ?? 0),
+      esc(b.platform_fee ?? 0),
+      esc(b.total_amount ?? 0),
+      esc(b.payment_status || ""),
+      esc(b.status || ""),
+      esc(b.created_at || ""),
+    ].join(","));
+
+    res.setHeader("Content-Type", "text/csv");
+    res.setHeader("Content-Disposition", `attachment; filename="bookings-export-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send([headers, ...rows].join("\r\n"));
+  } catch { res.status(500).json({ error: "Failed to export bookings" }); }
+});
+
+adminRouter.get("/bookings", async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { status, search, page = "1", limit = "50" } = req.query as Record<string, string>;
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50));
+    const from = (pageNum - 1) * limitNum;
+    const to = from + limitNum - 1;
+
+    let query = supabase
+      .from("bookings")
+      .select(BOOKING_SELECT, { count: "exact" });
+
+    if (status) {
+      query = query.eq("status", status);
+    }
+
+    if (search) {
+      query = query.ilike("booking_reference", `%${search}%`);
+    }
+
+    const { data, error, count } = await query
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (error) { res.status(500).json({ error: error.message }); return; }
+
+    res.json(data ?? []);
   } catch { res.status(500).json({ error: "Failed to fetch bookings" }); }
+});
+
+adminRouter.put("/bookings/:id/refund", async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { refund_amount } = req.body;
+
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .select("*, payment:payments(*)")
+      .eq("id", req.params.id)
+      .single();
+
+    if (bookingError || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+
+    const payment = booking.payment;
+    if (!payment) { res.status(400).json({ error: "No payment found for this booking" }); return; }
+
+    const amount = refund_amount ?? payment.amount ?? booking.total_amount;
+
+    const { data: updatedPayment, error: paymentError } = await supabase
+      .from("payments")
+      .update({
+        status: "refunded",
+        refund_amount: amount,
+        refund_reason: "Admin refund",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", payment.id)
+      .select()
+      .single();
+
+    if (paymentError) { res.status(500).json({ error: paymentError.message }); return; }
+
+    await supabase
+      .from("bookings")
+      .update({ payment_status: "refunded", updated_at: new Date().toISOString() })
+      .eq("id", req.params.id);
+
+    await supabase.from("notifications").insert({
+      user_id: booking.user_id,
+      title: "Refund Processed",
+      body: `Refund of ₹${amount} has been processed for your booking.`,
+      type: "refund",
+      is_read: false,
+      created_at: new Date().toISOString(),
+    });
+
+    res.json(updatedPayment);
+  } catch { res.status(500).json({ error: "Failed to process refund" }); }
 });
 
 adminRouter.put("/bookings/:id/status", async (req, res) => {
   try {
     const supabase = getSupabaseServerClient();
-    const { status } = req.body;
-    if (!["pending", "confirmed", "completed", "cancelled"].includes(status)) { res.status(400).json({ error: "Invalid status" }); return; }
-    const { data, error } = await supabase.from("bookings").update({ status, updated_at: new Date().toISOString() }).eq("id", req.params.id).select().single();
-    if (error) { res.status(500).json({ error: error.message }); return; }
-    res.json(data);
-  } catch { res.status(500).json({ error: "Failed to update booking" }); }
+    const { status, cancellation_reason } = req.body;
+
+    if (!status) { res.status(400).json({ error: "status is required" }); return; }
+
+    const { data: booking, error: fetchError } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+
+    const allowedNext = VALID_TRANSITIONS[booking.status] || [];
+    if (!allowedNext.includes(status)) {
+      res.status(400).json({ error: `Cannot transition from '${booking.status}' to '${status}'. Allowed transitions: ${allowedNext.join(", ") || "none"}` });
+      return;
+    }
+
+    if (status === "cancelled" && !cancellation_reason) {
+      res.status(400).json({ error: "cancellation_reason is required when cancelling a booking" });
+      return;
+    }
+
+    const updateData: Record<string, any> = { status, updated_at: new Date().toISOString() };
+    if (status === "cancelled") {
+      updateData.cancellation_reason = cancellation_reason;
+      updateData.cancelled_at = new Date().toISOString();
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("bookings")
+      .update(updateData)
+      .eq("id", req.params.id)
+      .select(BOOKING_SELECT)
+      .single();
+
+    if (updateError) { res.status(500).json({ error: updateError.message }); return; }
+
+    await supabase.from("notifications").insert({
+      user_id: booking.user_id,
+      type: "booking_status_changed",
+      title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+      body: status === "cancelled"
+        ? `Your booking has been cancelled. Reason: ${cancellation_reason}`
+        : `Your booking status has been updated to '${status}'.`,
+      data: { booking_id: req.params.id, status },
+    });
+
+    res.json(updated);
+  } catch { res.status(500).json({ error: "Failed to update booking status" }); }
 });
 
 // ── PAYMENTS ──
@@ -513,7 +712,7 @@ adminRouter.get("/payments", async (_req, res) => {
       .order("created_at", { ascending: false });
     if (error && error.code !== "PGRST116") { res.status(500).json({ error: error.message }); return; }
 
-    const bookings = await supabase.from("bookings").select("id, total_amount, status, created_at, salon:salons(name), customer:profiles(full_name, email)").order("created_at", { ascending: false });
+    const bookings = await supabase.from("bookings").select("id, total_amount, status, created_at, salon:salons(name), user:profiles(full_name, email)").order("created_at", { ascending: false });
 
     const paymentData = data ?? [];
     const bookingData = (bookings.data ?? []).filter((b: any) => b.status === "confirmed" || b.status === "completed");
@@ -529,7 +728,7 @@ adminRouter.get("/payments", async (_req, res) => {
     res.json({
       payments: bookingData.map((b: any) => ({
         id: b.id, transaction_id: b.id.slice(0, 12).toUpperCase(),
-        user: b.customer?.full_name, salon: b.salon?.name,
+        user: b.user?.full_name, salon: b.salon?.name,
         amount: b.total_amount, status: b.status, date: b.created_at,
       })),
       analytics: { dailyRevenue, monthlyRevenue, yearlyRevenue },
@@ -731,6 +930,20 @@ adminRouter.put("/settings", async (req, res) => {
     if (error) { res.status(500).json({ error: error.message }); return; }
     res.json(data);
   } catch { res.status(500).json({ error: "Failed to update settings" }); }
+});
+
+// ── STAFF ──
+adminRouter.get("/salons/:salonId/staff", async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { data, error } = await supabase
+      .from("salon_staff")
+      .select("id, name, role, is_active")
+      .eq("salon_id", req.params.salonId)
+      .order("name", { ascending: true });
+    if (error) { res.status(500).json({ error: error.message }); return; }
+    res.json(data ?? []);
+  } catch { res.status(500).json({ error: "Failed to fetch staff" }); }
 });
 
 // ── COVER IMAGE ──

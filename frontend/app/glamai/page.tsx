@@ -3,25 +3,27 @@
 import { useEffect, useRef, useState } from "react";
 import { userService } from "@/services/user.service";
 import { uploadScanImage, analyzeScan } from "@/services/glamai.service";
-import { SCAN_MESSAGES, MOCK_ANALYSIS, PRODUCTS, SALONS } from "@/data/glamai";
-import { DashboardNavbar } from "@/components/dashboard/DashboardNavbar";
+import { SCAN_MESSAGES, MOCK_ANALYSIS, SALONS } from "@/data/glamai";
+import { CustomerNavbar } from "@/components/customer/CustomerNavbar";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Upload, Lock, Camera, Check,
-  Star, MapPin, ShoppingBag, Scissors, Droplets, Shield, Heart,
-  Scan, SmilePlus,
+  MapPin, Scissors, Droplets, Shield, Heart,
+  Download, Share2, ArrowRight,
 } from "lucide-react";
+
+/* ============= HOOKS ============= */
 
 function useAnimatedScore(target: number, run: boolean) {
   const [val, setVal] = useState(0);
   useEffect(() => {
     if (!run) { setVal(0); return; }
-    const dur = 1000;
+    const dur = 1200;
     const start = Date.now();
     let raf: number;
     const tick = () => {
       const t = Math.min((Date.now() - start) / dur, 1);
-      const e = 1 - Math.pow(1 - t, 3);
+      const e = 1 - Math.pow(1 - t, 4);
       setVal(Math.round(e * target));
       if (t < 1) raf = requestAnimationFrame(tick);
     };
@@ -31,14 +33,16 @@ function useAnimatedScore(target: number, run: boolean) {
   return val;
 }
 
-function ScoreRing({ score, run, size = 64 }: { score: number; run: boolean; size?: number }) {
+/* ============= SHARED COMPONENTS ============= */
+
+function ScoreRing({ score, run, size = 140 }: { score: number; run: boolean; size?: number }) {
   const val = useAnimatedScore(score, run);
-  const r = (size - 8) / 2;
+  const r = (size - 10) / 2;
   const circ = r * 2 * Math.PI;
   const [show, setShow] = useState(false);
-  useEffect(() => { if (run) setTimeout(() => setShow(true), 200); }, [run]);
+  useEffect(() => { if (run) setTimeout(() => setShow(true), 300); }, [run]);
 
-  const strokeW = size > 80 ? 6 : size > 50 ? 4 : 3;
+  const strokeW = size > 100 ? 8 : size > 60 ? 6 : 4;
 
   return (
     <div className="relative shrink-0" style={{ width: size, height: size }}>
@@ -46,10 +50,18 @@ function ScoreRing({ score, run, size = 64 }: { score: number; run: boolean; siz
         <defs>
           <linearGradient id={`scoreGrad_${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#EC4899" />
+            <stop offset="50%" stopColor="#F472B6" />
             <stop offset="100%" stopColor="#A855F7" />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#F3E8FF" strokeWidth={strokeW} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke="#F9F0F6"
+          strokeWidth={strokeW}
+        />
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -60,289 +72,86 @@ function ScoreRing({ score, run, size = 64 }: { score: number; run: boolean; siz
           strokeLinecap="round"
           initial={{ strokeDasharray: circ, strokeDashoffset: circ }}
           animate={show ? { strokeDashoffset: circ - (val / 100) * circ } : {}}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className={`font-bold text-purple-600 leading-none ${size > 80 ? "text-[26px]" : size > 50 ? "text-[18px]" : "text-[13px]"}`}>{val}</span>
-        <span className={`text-gray-400 font-medium ${size > 80 ? "text-[9px]" : size > 50 ? "text-[7px]" : "text-[5px]"}`}>%</span>
-      </div>
-    </div>
-  );
-}
-
-function MiniChart({ color, height = 30 }: { color: string; height?: number }) {
-  return (
-    <div className="flex items-end gap-[3px] flex-1" style={{ height }}>
-      {[40, 65, 50, 80, 70, 90, 75, 95, 85, 100].map((h, i) => (
-        <div
-          key={i}
-          className="flex-1 rounded-full"
+        <span
+          className="font-bold leading-none"
           style={{
-            height: `${h}%`,
-            background: `${color}${i > 6 ? "" : "40"}`,
+            fontSize: size > 100 ? 42 : size > 60 ? 26 : 18,
+            background: "linear-gradient(135deg, #EC4899, #A855F7)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
-        />
-      ))}
+        >
+          {val}
+        </span>
+        <span
+          className="text-gray-400 font-medium"
+          style={{ fontSize: size > 100 ? 13 : size > 60 ? 9 : 7 }}
+        >
+          / 100
+        </span>
+      </div>
     </div>
   );
 }
 
-function HeroFaceScan() {
+function MetricCard({ icon: Icon, label, score, color, barColor, run, delay = 0 }: {
+  icon: any;
+  label: string;
+  score: number;
+  color: string;
+  barColor: string;
+  run: boolean;
+  delay?: number;
+}) {
+  const val = useAnimatedScore(score, run);
+  const statusLabel = val >= 90 ? "Excellent" : val >= 80 ? "Good" : val >= 70 ? "Fair" : "Needs Work";
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <div
-        className="absolute inset-0"
-        style={{ background: "linear-gradient(145deg, #FFF5F9 0%, #FCE7F3 35%, #FDF2F8 65%, #F3E8FF 100%)" }}
-      />
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-pink-200/20 blur-3xl" />
-      <div className="absolute -bottom-24 right-0 w-80 h-80 rounded-full bg-purple-200/15 blur-3xl" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-pink-100/10 blur-3xl" />
-
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative">
-          <motion.div
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="relative"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={run ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay, ease: "easeOut" }}
+      whileHover={{ y: -6, boxShadow: "0 20px 50px rgba(0,0,0,0.08)" }}
+      className="rounded-[20px] bg-white border border-[#E5E7EB]/60 p-5 shadow-sm hover:shadow-lg transition-all duration-300 cursor-default"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-11 h-11 rounded-2xl flex items-center justify-center"
+            style={{ background: `${color}12` }}
           >
-            <motion.img
-              src="https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=600&q=80&auto=format&fit=crop"
-              alt="AI Beauty Scan"
-              className="w-[240px] h-[240px] rounded-full object-cover"
-              style={{
-                boxShadow: "0 0 80px rgba(236,72,153,0.25), 0 0 160px rgba(168,85,247,0.1), 0 20px 60px rgba(0,0,0,0.08)",
-              }}
-            />
-          </motion.div>
-
-          <motion.div
-            className="absolute inset-[-16px] rounded-full border-[2px] border-pink-300/30"
-            animate={{ scale: [1, 1.06, 1], opacity: [0.4, 0.7, 0.4] }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-          />
-          <motion.div
-            className="absolute inset-[-32px] rounded-full border-[1.5px] border-pink-200/15"
-            animate={{ scale: [1, 1.04, 1], opacity: [0.3, 0.5, 0.3] }}
-            transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-          />
-          <motion.div
-            className="absolute inset-[-48px] rounded-full border-[1px] border-purple-200/10"
-            animate={{ scale: [1, 1.03, 1], opacity: [0.2, 0.35, 0.2] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-          />
-
-          <motion.div
-            className="absolute left-[-24px] right-[-24px] h-[1.5px] bg-gradient-to-r from-transparent via-pink-400/50 to-transparent"
-            animate={{ top: ["18%", "82%", "18%"] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-          />
-
-          <div className="absolute -top-3 -right-3 w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center border border-white/60">
-            <Sparkles size={18} className="text-pink-500" />
+            <Icon size={19} style={{ color }} />
           </div>
-          <div className="absolute -bottom-2 -left-3 w-11 h-11 rounded-2xl bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center border border-white/60">
-            <Scan size={18} className="text-purple-500" />
-          </div>
-          <div className="absolute top-1/3 -right-6 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center border border-white/60">
-            <div className="w-3 h-3 rounded-full bg-emerald-400" style={{ animation: "pulse 2s ease-in-out infinite" }} />
-          </div>
-          <div className="absolute bottom-1/3 -left-6 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm shadow-lg flex items-center justify-center border border-white/60">
-            <div className="w-3 h-3 rounded-full bg-pink-400" style={{ animation: "pulse 2s ease-in-out infinite 0.5s" }} />
-          </div>
+          <span className="text-sm font-semibold text-[#6B7280]">{label}</span>
         </div>
+        <span className="text-[22px] font-bold" style={{ color }}>
+          {val}
+          <span className="text-xs font-medium opacity-40">%</span>
+        </span>
       </div>
-    </div>
-  );
-}
-
-function RightPanelFeatureCard({ item, index }: {
-  item: { label: string; desc: string; icon: any; color: string; bg: string };
-  index: number;
-}) {
-  const Icon = item.icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.15 + index * 0.06 }}
-      whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,0,0,0.06)" }}
-      className="flex flex-col items-start gap-3 p-5 rounded-2xl bg-white/75 backdrop-blur-sm border border-white/70 shadow-sm hover:shadow-xl hover:border-pink-200/30 transition-all duration-300"
-      style={{ height: "140px" }}
-    >
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm" style={{ background: item.bg }}>
-        <Icon size={20} style={{ color: item.color }} />
-      </div>
-      <div>
-        <h4 className="text-[15px] font-bold text-gray-900 leading-tight">{item.label}</h4>
-        <p className="text-[12px] text-gray-400 leading-snug mt-0.5">{item.desc}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-function RightPanelPreviewCard({ item, index }: {
-  item: { label: string; icon: any; score: number; color: string; badge: string };
-  index: number;
-}) {
-  const Icon = item.icon;
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: 0.3 + index * 0.05 }}
-      className="relative rounded-[24px] bg-white/70 backdrop-blur-md border border-white/80 shadow-sm overflow-hidden"
-      style={{ height: "180px" }}
-    >
-      <div className="p-5 flex flex-col h-full">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${item.color}15` }}>
-              <Icon size={17} style={{ color: item.color }} />
-            </div>
-            <span className="text-[13px] font-bold text-gray-800">{item.label}</span>
-          </div>
-          <span className="text-[11px] font-bold" style={{ color: item.color }}>{item.score}%</span>
-        </div>
-        <div className="flex-1 flex items-end">
-          {item.label === "Beauty Score" ? (
-            <div className="flex items-center gap-3 w-full">
-              <ScoreRing score={item.score} run={false} size={56} />
-              <div className="flex-1 h-2 rounded-full bg-gray-100/80 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-pink-400 to-purple-500" style={{ width: `${item.score}%` }} />
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 w-full">
-              <MiniChart color={item.color} height={36} />
-              <span className="text-[10px] font-medium text-gray-400 px-2 py-1 rounded-full bg-gray-50 border border-gray-100 whitespace-nowrap">{item.badge}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-function EmptyState({ onUploadClick }: { onUploadClick: () => void }) {
-  const features = [
-    { label: "Hair Analysis", desc: "Deep hair health & structure analysis", icon: Scissors, color: "#EC4899", bg: "#FCE7F3" },
-    { label: "Skin Analysis", desc: "Advanced skin clarity & texture report", icon: SmilePlus, color: "#A855F7", bg: "#F3E8FF" },
-    { label: "Beauty Score", desc: "AI-evaluated overall beauty metric", icon: Sparkles, color: "#10B981", bg: "#D1FAE5" },
-    { label: "Product Recs", desc: "Custom products for your routine", icon: ShoppingBag, color: "#F59E0B", bg: "#FEF3C7" },
-    { label: "Salon Recs", desc: "Best salons & treatments near you", icon: MapPin, color: "#3B82F6", bg: "#DBEAFE" },
-    { label: "Scalp Health", desc: "Scalp condition & hair root analysis", icon: Shield, color: "#EC4899", bg: "#FCE7F3" },
-  ];
-
-  const previewItems = [
-    { label: "Beauty Score", icon: Sparkles, score: 92, color: "#F59E0B", badge: "Excellent" },
-    { label: "Hair Health", icon: Scissors, score: 90, color: "#EC4899", badge: "Healthy" },
-    { label: "Skin Health", icon: SmilePlus, score: 94, color: "#A855F7", badge: "Radiant" },
-    { label: "Scalp Health", icon: Shield, score: 85, color: "#10B981", badge: "Good" },
-    { label: "Recommendations", icon: ShoppingBag, score: 96, color: "#F59E0B", badge: "4 Products" },
-    { label: "Salon Matches", icon: MapPin, score: 92, color: "#3B82F6", badge: "5 Near You" },
-  ];
-
-  return (
-    <div className="h-full flex flex-col overflow-y-auto hide-scrollbar">
-      <div className="shrink-0">
+      <div className="h-[7px] rounded-full bg-[#F3F4F6] overflow-hidden">
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-16 h-16 mb-5"
-        >
-          <div className="absolute inset-0 rounded-[20px] bg-gradient-to-br from-pink-400 to-purple-500 rotate-6 opacity-80 blur-sm" />
-          <div className="absolute inset-0 rounded-[20px] bg-gradient-to-br from-pink-300 to-purple-400 -rotate-3 opacity-60" />
-          <div className="absolute inset-0 rounded-[20px] bg-white flex items-center justify-center shadow-2xl shadow-pink-200/40 border border-white/60">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 flex items-center justify-center">
-              <Sparkles size={24} className="text-pink-500" />
-            </div>
-          </div>
-          <motion.div
-            animate={{ scale: [1, 1.12, 1], opacity: [0.3, 0.6, 0.3] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -inset-3 rounded-[24px] border-[1.5px] border-pink-200/30"
-          />
-        </motion.div>
-
-        <motion.h1
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="font-display text-[40px] md:text-[52px] font-bold text-gray-900 leading-[1.08] mb-3"
-        >
-          Upload your beauty photo
-        </motion.h1>
-
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-          className="text-[14px] md:text-[15px] text-gray-400 leading-relaxed max-w-[480px] mb-8"
-        >
-          Receive a complete AI-powered beauty report with personalized recommendations.
-        </motion.p>
+          className="h-full rounded-full"
+          style={{ background: `linear-gradient(90deg, ${color}, ${barColor}cc)` }}
+          initial={{ width: 0 }}
+          animate={run ? { width: `${val}%` } : {}}
+          transition={{ duration: 1, delay: delay + 0.2, ease: "easeOut" }}
+        />
       </div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-        className="grid grid-cols-3 gap-4 mb-8"
+      <span
+        className="inline-block mt-3 text-xs font-semibold px-3 py-1 rounded-full"
+        style={{ background: `${color}10`, color }}
       >
-        {features.map((item, i) => (
-          <RightPanelFeatureCard key={item.label} item={item} index={i} />
-        ))}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.3 }}
-        className="relative mb-4"
-      >
-        <div className="flex items-center gap-4 mb-5">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-          <span className="text-[11px] font-bold text-gray-300 uppercase tracking-[0.2em]">What You'll Receive</span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        </div>
-
-        <div className="relative">
-          <div className="grid grid-cols-3 gap-4 blur-[3px] opacity-40 pointer-events-none select-none">
-            {previewItems.map((item, i) => (
-              <RightPanelPreviewCard key={item.label} item={item} index={i} />
-            ))}
-          </div>
-
-          <div className="absolute inset-0 z-10 flex items-center justify-center">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="bg-white/40 backdrop-blur-xl rounded-2xl px-8 py-6 shadow-[0_16px_48px_rgba(0,0,0,0.08)] border border-white/60 flex flex-col items-center gap-3"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center shadow-sm">
-                <Lock size={20} className="text-pink-500" />
-              </div>
-              <div className="text-center">
-                <p className="text-[14px] font-bold text-gray-800">Unlock after uploading your photo</p>
-                <p className="text-[12px] text-gray-400 mt-1">Get your complete AI analysis & recommendations</p>
-              </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); onUploadClick(); }}
-                className="mt-1 inline-flex items-center gap-2 px-6 py-3 rounded-full bg-gray-900 text-white text-[13px] font-semibold hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_4px_16px_rgba(0,0,0,0.12)]"
-              >
-                <Upload size={14} />
-                Upload Photo
-              </button>
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
-    </div>
+        {statusLabel}
+      </span>
+    </motion.div>
   );
 }
+
+/* ============= PAGE ============= */
 
 export default function GlamAIPage() {
   const [quota, setQuota] = useState<{ allowed: boolean; scansUsed: number; scansLimit: number | null; remaining: number } | null>(null);
@@ -400,505 +209,517 @@ export default function GlamAIPage() {
   const showDone = state === "done" && preview;
   const showError = state === "error";
 
-  const triggerUpload = () => {
-    inputRef.current?.click();
-  };
+  /* ─── derived presentational data ─── */
+
+  const strengths = MOCK_ANALYSIS.insights.filter((i) => i.status === "positive");
+  const needsAttention = MOCK_ANALYSIS.insights.filter((i) => i.status !== "positive");
+
+  const metrics = [
+    { icon: Scissors, label: "Hair Health", score: MOCK_ANALYSIS.hair.score, color: "#EC4899", barColor: "#EC4899" },
+    { icon: Heart, label: "Skin Health", score: MOCK_ANALYSIS.skin.score, color: "#8B5CF6", barColor: "#8B5CF6" },
+    { icon: Shield, label: "Scalp Health", score: MOCK_ANALYSIS.scalp.score, color: "#10B981", barColor: "#10B981" },
+    { icon: Droplets, label: "Hydration", score: MOCK_ANALYSIS.hydration.score, color: "#3B82F6", barColor: "#3B82F6" },
+    { icon: Sparkles, label: "Beauty Score", score: MOCK_ANALYSIS.aiScore, color: "#F59E0B", barColor: "#F59E0B" },
+    { icon: MapPin, label: "Salon Matches", score: Math.min(SALONS.length * 20, 100), color: "#EC4899", barColor: "#EC4899" },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#FAF8F6]">
-      <DashboardNavbar />
+    <div className="min-h-screen bg-[#FAFAFB]">
+      <CustomerNavbar />
 
-      <main className="w-full max-w-[1800px] mx-auto px-6 md:px-8 pt-[104px] pb-8">
-        <div className="flex flex-col lg:flex-row gap-6" style={{ minHeight: "calc(100vh - 136px)" }}>
-          {/* ===== LEFT PANEL 40% ===== */}
+      <main
+        className="w-full mx-auto max-w-[1600px] px-8 pt-[112px] pb-8"
+      >
+        <div
+          className="glamai-grid min-h-[calc(100vh-152px)]"
+        >
+          {/* ─── LEFT CARD — UPLOAD PANEL ─── */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4 }}
-            className="w-full lg:w-[40%] shrink-0"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
           >
-            <div
-              className="bg-white/85 backdrop-blur-sm rounded-[32px] overflow-hidden flex flex-col shadow-[0_4px_24px_rgba(0,0,0,0.04)] border border-white/40"
-              style={{ height: "calc(100vh - 136px)" }}
-            >
-              {/* Hero Image */}
-              <div className="relative h-[300px] shrink-0 overflow-hidden">
-                {showUpload && <HeroFaceScan />}
-                {showProcessing && (
-                  <div className="relative w-full h-full overflow-hidden bg-gray-900">
-                    <img src={preview!} alt="Upload" className="w-full h-full object-cover opacity-60" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center">
-                        <div className="relative w-14 h-14 mx-auto mb-3">
-                          <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-pink-400 border-r-purple-400 spin-ring" />
-                          <div className="absolute inset-1 rounded-full bg-white/90 flex items-center justify-center">
-                            <Sparkles size={18} className="text-pink-500" />
-                          </div>
-                        </div>
-                        <p className="text-white text-[13px] font-semibold drop-shadow">
-                          {state === "uploading" ? "Uploading..." : "Analyzing..."}
-                        </p>
-                        <AnimatePresence mode="wait">
-                          <motion.p
-                            key={msgIdx}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -4 }}
-                            className="text-white/70 text-[11px] mt-1 drop-shadow"
-                          >
-                            {SCAN_MESSAGES[msgIdx]}
-                          </motion.p>
-                        </AnimatePresence>
+            <div className="bg-white rounded-3xl shadow-sm flex flex-col">
+              {/* IDLE — Upload UI */}
+              {showUpload && (
+                <div className="flex-1 flex flex-col items-center justify-center px-8 py-12 text-center">
+                  {/* Icon */}
+                  <motion.div
+                    initial={{ scale: 0.7, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="w-16 h-16 rounded-[20px] flex items-center justify-center mb-7"
+                    style={{
+                      background: "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
+                      boxShadow: "0 4px 16px rgba(236,72,153,0.1)",
+                    }}
+                  >
+                    <Sparkles size={28} style={{ color: "#EC4899" }} />
+                  </motion.div>
+
+                  {/* Heading */}
+                  <motion.h1
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+                    className="font-display font-bold leading-[1.08] mb-4 text-5xl text-[#111827]"
+                  >
+                    Upload Your<br />Beauty Photo
+                  </motion.h1>
+
+                  {/* Subtitle */}
+                  <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+                    className="mb-8 max-w-[320px] text-sm text-[#6B7280] leading-relaxed"
+                  >
+                    Get a complete AI-powered beauty report in under 10 seconds.
+                  </motion.p>
+
+                  {/* Feature Pills */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+                    className="flex flex-wrap gap-2.5 justify-center mb-8"
+                  >
+                    {["Hair Analysis", "Skin Analysis", "Scalp Analysis", "Beauty Score"].map((item) => (
+                      <div
+                        key={item}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-medium bg-[#FFF0F5] border border-[#FBCFE8] text-[#DB2777]"
+                      >
+                        <Check size={12} className="text-[#EC4899]" />
+                        {item}
                       </div>
+                    ))}
+                  </motion.div>
+
+                  {/* Upload Area */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.25, ease: "easeOut" }}
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); }}
+                    onClick={() => !quota?.allowed && !loading ? null : inputRef.current?.click()}
+                    className={`w-full flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 rounded-3xl ${dragOver ? "bg-[#FFF0F5]" : "bg-[#FFFBFC]"}`}
+                    style={{
+                      height: 380,
+                      border: dragOver ? "2px dashed #EC4899" : "2px dashed #FBCFE8",
+                    }}
+                  >
+                    <div className={dragOver ? "scale-105 transition-transform duration-200" : ""}>
+                      <div className="w-16 h-16 rounded-[20px] flex items-center justify-center mx-auto mb-5 bg-[#FFF0F5]">
+                        <Upload size={26} className="text-[#EC4899]" />
+                      </div>
+                      <h3 className="font-bold mb-2 text-lg text-[#111827]">
+                        Choose Photo
+                      </h3>
+                      <p className="mb-6 text-sm text-[#9CA3AF]">
+                        Drag & Drop or browse files
+                      </p>
+
+                      {!quota?.allowed && !loading ? (
+                        <div className="inline-flex items-center gap-1.5 px-6 py-3 rounded-full text-xs font-semibold bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626]">
+                          <Lock size={13} /> Upgrade to continue
+                        </div>
+                      ) : (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+                          className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-white text-sm font-semibold transition-all duration-300 hover:scale-105"
+                          style={{
+                            background: "linear-gradient(135deg, #EC4899, #F472B6)",
+                            boxShadow: "0 8px 32px rgba(236,72,153,0.3)",
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 12px 40px rgba(236,72,153,0.4)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 32px rgba(236,72,153,0.3)"; }}
+                        >
+                          <Upload size={15} />
+                          Choose Photo
+                        </button>
+                      )}
+
+                      <input
+                        ref={inputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Helper text */}
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.4, delay: 0.35 }}
+                    className="mt-5 text-xs text-[#9CA3AF]"
+                  >
+                    PNG &bull; JPG &bull; WEBP &nbsp;&middot;&nbsp; Maximum size: 10 MB
+                  </motion.p>
+                </div>
+              )}
+
+              {/* PROCESSING — Uploading / Scanning */}
+              {showProcessing && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex-1 flex flex-col items-center justify-center text-center px-8"
+                >
+                  <div className="relative w-24 h-24 mb-8">
+                    <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-[#EC4899] border-r-[#A855F7] animate-spin" />
+                    <div className="absolute inset-3 rounded-full flex items-center justify-center bg-white shadow-lg">
+                      <Sparkles size={26} className="text-[#EC4899]" />
                     </div>
                   </div>
-                )}
-                {showDone && (
-                  <div className="relative w-full h-full overflow-hidden">
-                    <img src={preview!} alt="Your photo" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                  <p className="font-semibold mb-2 text-base text-[#374151]">
+                    {state === "uploading" ? "Uploading your photo..." : "Analyzing your beauty..."}
+                  </p>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={msgIdx}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      className="text-sm text-[#9CA3AF]"
+                    >
+                      {SCAN_MESSAGES[msgIdx]}
+                    </motion.p>
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {/* DONE — Preview with result */}
+              {showDone && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center px-8 py-12">
+                  <div className="relative w-full overflow-hidden mb-6 rounded-3xl shadow-lg">
+                    <img
+                      src={preview!}
+                      alt="Your photo"
+                      className="w-full object-cover h-[280px]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                     <div className="absolute top-4 left-4">
-                      <div className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-[10px] font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm border border-white/20">
-                        <Check size={11} />
+                      <div className="px-3.5 py-1.5 rounded-full text-white text-xs font-semibold flex items-center gap-1.5 bg-[#10B981] shadow-[0_4px_16px_rgba(16,185,129,0.3)]">
+                        <Check size={12} />
                         Analysis Complete
                       </div>
                     </div>
                   </div>
-                )}
-                {showError && (
-                  <div className="relative w-full h-full overflow-hidden bg-gradient-to-br from-red-50 to-pink-50 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
-                        <Camera size={22} className="text-red-300" />
-                      </div>
-                      <p className="text-gray-800 text-[12px] font-semibold mb-0.5">Analysis Failed</p>
-                      <p className="text-gray-400 text-[11px] mb-4 max-w-[220px] mx-auto">{error}</p>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); reset(); }}
-                        className="bg-gray-900 text-white rounded-full px-5 py-2 text-[12px] font-semibold hover:bg-gray-800 transition-all shadow-md"
-                      >
-                        Try Again
-                      </button>
-                    </div>
+                  <p className="font-semibold mb-5 text-base text-[#374151]">
+                    Your beauty scan is ready!
+                  </p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); reset(); }}
+                    className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-white text-sm font-semibold transition-all duration-300 bg-[#111827] hover:scale-105"
+                  >
+                    <Camera size={14} />
+                    New Analysis
+                  </button>
+                </div>
+              )}
+
+              {/* ERROR state */}
+              {showError && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex-1 flex flex-col items-center justify-center text-center px-8"
+                >
+                  <div className="w-16 h-16 rounded-full flex items-center justify-center mb-5 bg-[#FEF2F2]">
+                    <Camera size={26} className="text-[#F87171]" />
                   </div>
-                )}
-              </div>
-
-              {/* Upload Body */}
-              <div
-                className="flex-1 px-8 pb-8 pt-6 flex flex-col"
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                onDragLeave={() => setDragOver(false)}
-                onDrop={(e) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files?.[0]; if (f) handleFile(f); }}
-                onClick={() => state === "idle" && !error && inputRef.current?.click()}
-              >
-                {showUpload && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center"
+                  <p className="font-semibold mb-1 text-base text-[#374151]">
+                    Analysis Failed
+                  </p>
+                  <p className="mb-6 max-w-[260px] text-sm text-[#9CA3AF] leading-relaxed">
+                    {error}
+                  </p>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); reset(); }}
+                    className="inline-flex items-center gap-2 px-8 py-3 rounded-full text-white text-sm font-semibold transition-all duration-300 bg-[#111827] shadow-md hover:scale-105"
                   >
-                    <motion.h2
-                      animate={dragOver ? { scale: 1.02 } : { scale: 1 }}
-                      className="font-display text-[42px] font-bold text-gray-900 leading-[1.1] mb-3"
-                    >
-                      Upload Your Beauty Photo
-                    </motion.h2>
+                    Try Again
+                  </button>
+                </motion.div>
+              )}
 
-                    <p className="text-[14px] text-gray-400 max-w-[280px] mx-auto leading-relaxed mb-6">
-                      Get a complete AI-powered beauty analysis in seconds.
+              {/* Privacy card — only when idle */}
+              {showUpload && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.45, duration: 0.5 }}
+                  className="mx-8 mb-8 flex items-start gap-3.5 p-5 rounded-2xl bg-[#FFFBFC] border border-[#FFF0F5]"
+                >
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 bg-[#FFF0F5]">
+                    <Lock size={17} className="text-[#EC4899]" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1 text-sm text-[#374151]">
+                      Secure & Private
+                    </h4>
+                    <p className="text-xs text-[#9CA3AF] leading-relaxed">
+                      Your images are encrypted, used only for analysis and never permanently stored.
                     </p>
-
-                    <div className="w-full max-w-[320px] space-y-3 mb-6">
-                      {[
-                        "Hair Health Analysis",
-                        "Skin Health Analysis",
-                        "Scalp Analysis",
-                        "Beauty Score",
-                      ].map((item) => (
-                        <div key={item} className="flex items-center gap-3">
-                          <div className="w-5 h-5 rounded-full bg-pink-50 border border-pink-100 flex items-center justify-center">
-                            <Check size={10} className="text-pink-500" />
-                          </div>
-                          <span className="text-[13px] font-medium text-gray-700">{item}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {!quota?.allowed && !loading ? (
-                      <div className="inline-flex items-center gap-1.5 px-5 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[12px] font-medium">
-                        <Lock size={13} /> Upgrade to continue
-                      </div>
-                    ) : (
-                      <>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                          className="flex items-center justify-center gap-2.5 w-full max-w-[320px] rounded-full bg-gray-900 text-white text-[15px] font-semibold hover:bg-gray-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_8px_28px_rgba(0,0,0,0.18)]"
-                          style={{ height: "60px" }}
-                        >
-                          <Upload size={17} />
-                          Choose Photo
-                        </button>
-                        <input
-                          ref={inputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                        />
-                        <p className="text-[12px] text-gray-300 mt-3">or drag & drop your image</p>
-                      </>
-                    )}
-                  </motion.div>
-                )}
-
-                {showProcessing && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center"
-                  >
-                    <div className="relative w-16 h-16 mb-4">
-                      <div className="absolute inset-0 rounded-full border-[3px] border-transparent border-t-pink-400 border-r-purple-400 spin-ring" />
-                      <div className="absolute inset-1.5 rounded-full bg-white flex items-center justify-center shadow-lg">
-                        <Sparkles size={20} className="text-pink-500" />
-                      </div>
-                    </div>
-                    <p className="text-gray-800 text-[13px] font-semibold mb-1">
-                      {state === "uploading" ? "Uploading..." : "Analyzing..."}
-                    </p>
-                    <AnimatePresence mode="wait">
-                      <motion.p
-                        key={msgIdx}
-                        initial={{ opacity: 0, y: 4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        className="text-gray-400 text-[11px]"
-                      >
-                        {SCAN_MESSAGES[msgIdx]}
-                      </motion.p>
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-
-                {showDone && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
-                      <Check size={22} className="text-emerald-500" />
-                    </div>
-                    <p className="text-gray-800 text-[13px] font-semibold mb-3">Analysis Complete!</p>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); reset(); }}
-                        className="text-[11px] text-gray-400 hover:text-gray-600 transition-colors px-4 py-2 rounded-full border border-gray-200"
-                      >
-                        New analysis
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {showError && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex-1 flex flex-col items-center justify-center text-center"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-3">
-                      <Camera size={22} className="text-red-300" />
-                    </div>
-                    <p className="text-gray-800 text-[13px] font-semibold mb-0.5">Analysis Failed</p>
-                    <p className="text-gray-400 text-[11px] mb-4 max-w-[220px]">{error}</p>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); reset(); }}
-                      className="bg-gray-900 text-white rounded-full px-5 py-2 text-[12px] font-semibold hover:bg-gray-800 transition-all shadow-md"
-                    >
-                      Try Again
-                    </button>
-                  </motion.div>
-                )}
-
-                {/* Security Card */}
-                {showUpload && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="mt-4 p-5 rounded-[24px] flex items-start gap-3 bg-pink-50/80 border border-pink-100/50"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
-                      <Lock size={15} className="text-pink-500" />
-                    </div>
-                    <div>
-                      <h4 className="text-[13px] font-bold text-gray-800 mb-1">Secure & Private</h4>
-                      <p className="text-[11px] text-gray-400 leading-relaxed">
-                        Your photos are encrypted and used only for AI analysis. We never share or store your images permanently.
-                      </p>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
+                  </div>
+                </motion.div>
+              )}
             </div>
           </motion.div>
 
-          {/* ===== RIGHT PANEL 60% ===== */}
+          {/* ─── RIGHT CARD — REPORT DASHBOARD ─── */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="flex-1 min-w-0"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+            className="min-w-0"
           >
-            <div
-              className="rounded-[32px] overflow-hidden"
-              style={{
-                height: "calc(100vh - 136px)",
-                background: "linear-gradient(180deg, #FFF5F9 0%, #FCE7F3 100%)",
-              }}
-            >
-              <div className="h-full p-8 md:p-10">
-                {!isDone ? (
-                  <EmptyState onUploadClick={triggerUpload} />
-                ) : (
+            <div className="bg-white rounded-3xl shadow-sm flex flex-col overflow-hidden min-h-[calc(100vh-152px)] p-8">
+              {!isDone ? (
+                /* ═══ EMPTY STATE ═══ */
+                <div className="flex-1 flex flex-col items-center justify-center text-center">
                   <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                    className="h-full flex flex-col"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="w-20 h-20 rounded-[24px] flex items-center justify-center mb-7"
+                    style={{
+                      background: "linear-gradient(135deg, #FFF0F5 0%, #F3E8FF 100%)",
+                      boxShadow: "0 4px 20px rgba(236,72,153,0.1)",
+                    }}
                   >
-                    <div className="flex items-center gap-3 mb-6 shrink-0">
-                      <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-white/60 flex items-center justify-center">
-                        <Sparkles size={18} className="text-pink-500" />
+                    <Sparkles size={32} className="text-[#EC4899]" />
+                  </motion.div>
+
+                  <motion.h2
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+                    className="font-display font-bold mb-3 text-3xl text-[#111827]"
+                  >
+                    Your AI Beauty Report
+                  </motion.h2>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+                    className="max-w-[400px] mb-10 text-sm text-[#6B7280] leading-relaxed"
+                  >
+                    Detailed AI analysis and personalized recommendations.
+                  </motion.p>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }}
+                    className="grid grid-cols-3 gap-3 w-full max-w-[440px]"
+                  >
+                    {[
+                      { label: "Hair Health", color: "#EC4899", bg: "#FFF0F5" },
+                      { label: "Skin Health", color: "#8B5CF6", bg: "#F3E8FF" },
+                      { label: "Scalp Health", color: "#10B981", bg: "#ECFDF5" },
+                      { label: "Hydration", color: "#3B82F6", bg: "#EFF6FF" },
+                      { label: "Beauty Score", color: "#F59E0B", bg: "#FFFBEB" },
+                      { label: "Salon Matches", color: "#EC4899", bg: "#FFF0F5" },
+                    ].map((item, i) => (
+                      <motion.div
+                        key={item.label}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 0.5, y: 0 }}
+                        transition={{ duration: 0.3, delay: 0.25 + i * 0.05 }}
+                        className="rounded-[20px] p-4 text-center bg-[#FAFAFA] border border-[#F3F4F6]"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-2xl flex items-center justify-center mx-auto mb-2.5"
+                          style={{ background: item.bg }}
+                        >
+                          <Sparkles size={16} style={{ color: item.color }} />
+                        </div>
+                        <p className="text-xs font-medium text-[#9CA3AF]">{item.label}</p>
+                        <p className="text-sm font-bold text-[#D1D5DB] mt-0.5">--%</p>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+              ) : (
+                /* ═══ FULL REPORT ═══ */
+                <div className="flex-1 flex flex-col min-h-0">
+                  {/* ── Header ── */}
+                  <motion.div
+                    initial={{ opacity: 0, y: -12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                    className="flex items-center justify-between mb-8 shrink-0"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-[#FFF0F5]">
+                        <Sparkles size={21} className="text-[#EC4899]" />
                       </div>
                       <div>
-                        <h3 className="font-display text-[20px] font-bold text-gray-900">AI Beauty Report</h3>
-                        <p className="text-[11px] text-emerald-500 font-medium flex items-center gap-1">
-                          <Check size={10} /> Analysis complete
+                        <h2 className="font-display font-bold text-xl text-[#111827]">
+                          Your AI Beauty Report
+                        </h2>
+                        <p className="text-xs text-[#9CA3AF] mt-0.5">
+                          Detailed AI analysis and personalized recommendations.
                         </p>
                       </div>
                     </div>
-
-                    <div className="flex-1 space-y-4 overflow-y-auto hide-scrollbar pr-1">
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="relative rounded-2xl overflow-hidden p-6 bg-white/80 backdrop-blur-sm border border-white/70 shadow-sm"
-                      >
-                        <div className="relative z-10 flex items-center gap-6">
-                          <ScoreRing score={MOCK_ANALYSIS.aiScore} run size={120} />
-                          <div className="flex-1">
-                            <h4 className="font-display text-[24px] font-bold text-gray-900">{MOCK_ANALYSIS.overallLabel}</h4>
-                            <p className="text-[13px] text-gray-400 mt-1 leading-relaxed">{MOCK_ANALYSIS.overallDesc}</p>
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              {MOCK_ANALYSIS.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-medium text-emerald-600"
-                                >
-                                  <Check size={9} /> {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <AnalysisCard icon={Scissors} label="Hair Health" score={MOCK_ANALYSIS.hair.score} color="#EC4899" barColor="#EC4899" run delay={0.15} />
-                        <AnalysisCard icon={Heart} label="Skin Health" score={MOCK_ANALYSIS.skin.score} color="#A855F7" barColor="#A855F7" run delay={0.2} />
-                        <AnalysisCard icon={Shield} label="Scalp Health" score={MOCK_ANALYSIS.scalp.score} color="#10B981" barColor="#10B981" run delay={0.25} />
-                        <AnalysisCard icon={Droplets} label="Hydration Level" score={MOCK_ANALYSIS.hydration.score} color="#3B82F6" barColor="#3B82F6" run delay={0.3} />
-                      </div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.35 }}
-                      >
-                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                          <Sparkles size={12} className="text-pink-400" /> AI Insights
-                        </h4>
-                        <div className="space-y-2">
-                          {MOCK_ANALYSIS.insights.map((insight, i) => (
-                            <InsightCard key={i} {...insight} delay={0.4 + i * 0.06} />
-                          ))}
-                        </div>
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                      >
-                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                          <ShoppingBag size={12} className="text-pink-400" /> Product Recommendations
-                        </h4>
-                        <div className="grid grid-cols-2 gap-3">
-                          {PRODUCTS.map((product) => (
-                            <ProductCard key={product.id} product={product} delay={0.55 + product.id * 0.08} />
-                          ))}
-                        </div>
-                      </motion.div>
-
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.65 }}
-                      >
-                        <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                          <MapPin size={12} className="text-pink-400" /> Salon Recommendations
-                        </h4>
-                        <div className="grid grid-cols-3 gap-3">
-                          {SALONS.map((salon) => (
-                            <SalonCard key={salon.id} salon={salon} delay={0.7 + salon.id * 0.08} />
-                          ))}
-                        </div>
-                      </motion.div>
+                    <div className="px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-1.5 shrink-0 bg-green-50 border border-green-200 text-green-700">
+                      <Check size={13} />
+                      Analysis Complete
                     </div>
                   </motion.div>
-                )}
-              </div>
+
+                  {/* ── Scrollable report body ── */}
+                  <div className="flex-1 overflow-y-auto hide-scrollbar space-y-6 pr-1">
+
+                    {/* Beauty Score Hero */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1, duration: 0.5, ease: "easeOut" }}
+                      className="flex items-center gap-8 rounded-[28px] p-8 bg-gradient-to-br from-[#FFF7FA] via-[#FCE7F3] to-[#FFF5F9]"
+                    >
+                      <div className="flex flex-col items-center shrink-0">
+                        <ScoreRing score={MOCK_ANALYSIS.aiScore} run size={140} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display font-bold mb-2 text-[26px] text-[#111827]">
+                          Overall Beauty Score
+                        </h3>
+                        <div className="flex items-center gap-3 mb-3">
+                          <span
+                            className="text-[22px] font-bold bg-gradient-to-r from-[#EC4899] to-[#A855F7] bg-clip-text text-transparent"
+                          >
+                            {MOCK_ANALYSIS.overallLabel}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#FFF0F5] text-[#DB2777]">
+                            Top 8%
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#6B7280] leading-relaxed max-w-[420px]">
+                          {MOCK_ANALYSIS.overallDesc}
+                        </p>
+                      </div>
+                    </motion.div>
+
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {metrics.map((m, i) => (
+                        <MetricCard
+                          key={m.label}
+                          icon={m.icon}
+                          label={m.label}
+                          score={m.score}
+                          color={m.color}
+                          barColor={m.barColor}
+                          run
+                          delay={0.15 + i * 0.06}
+                        />
+                      ))}
+                    </div>
+
+                    {/* AI Insights */}
+                    <div>
+                      <h4 className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Sparkles size={13} className="text-[#EC4899]" />
+                        AI Insights
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Strengths */}
+                        <motion.div
+                          initial={{ opacity: 0, x: -12 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.35, duration: 0.5 }}
+                          className="rounded-[20px] p-6 bg-green-50 border border-green-200"
+                        >
+                          <h5 className="font-bold mb-4 flex items-center gap-2 text-sm text-[#065F46]">
+                            <Check size={15} className="text-[#10B981]" />
+                            Your Strengths
+                          </h5>
+                          <div className="space-y-3">
+                            {strengths.map((insight, i) => (
+                              <div key={i} className="flex items-start gap-3">
+                                <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#D1FAE5]">
+                                  <Check size={10} className="text-[#10B981]" />
+                                </div>
+                                <span className="text-sm text-[#374151] leading-relaxed">
+                                  {insight.text}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+
+                        {/* Needs Attention */}
+                        <motion.div
+                          initial={{ opacity: 0, x: 12 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.4, duration: 0.5 }}
+                          className="rounded-[20px] p-6 bg-amber-50 border border-amber-200"
+                        >
+                          <h5 className="font-bold mb-4 flex items-center gap-2 text-sm text-[#92400E]">
+                            <span className="text-[#F59E0B] text-lg leading-none">&bull;</span>
+                            Needs Attention
+                          </h5>
+                          <div className="space-y-3">
+                            {needsAttention.map((insight, i) => (
+                              <div key={i} className="flex items-start gap-3">
+                                <span className="shrink-0 mt-0.5 text-[#F59E0B] text-lg leading-none">
+                                  &bull;
+                                </span>
+                                <span className="text-sm text-[#374151] leading-relaxed">
+                                  {insight.text}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    {/* Bottom Actions */}
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.5 }}
+                      className="grid grid-cols-3 gap-4 pt-2 pb-4"
+                    >
+                      <button className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 border border-[#E5E7EB] text-[#374151] bg-white hover:bg-[#FAFAFB] hover:text-[#111827] hover:scale-105">
+                        <Download size={15} />
+                        Download Report
+                      </button>
+                      <button className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-sm font-semibold transition-all duration-300 border border-[#E5E7EB] text-[#374151] bg-white hover:bg-[#FAFAFB] hover:text-[#111827] hover:scale-105">
+                        <Share2 size={15} />
+                        Share Report
+                      </button>
+                      <button className="flex items-center justify-center gap-2 px-5 py-3.5 rounded-full text-white text-sm font-semibold transition-all duration-300 hover:scale-105"
+                        style={{
+                          background: "linear-gradient(135deg, #EC4899, #F472B6)",
+                          boxShadow: "0 8px 32px rgba(236,72,153,0.25)",
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "0 12px 40px rgba(236,72,153,0.35)"; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "0 8px 32px rgba(236,72,153,0.25)"; }}
+                      >
+                        Book Recommended Salon
+                        <ArrowRight size={14} />
+                      </button>
+                    </motion.div>
+
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
+
         </div>
       </main>
     </div>
-  );
-}
-
-function AnalysisCard({
-  icon: Icon,
-  label,
-  score,
-  color,
-  barColor,
-  run,
-  delay = 0,
-}: {
-  icon: any;
-  label: string;
-  score: number;
-  color: string;
-  barColor: string;
-  run: boolean;
-  delay?: number;
-}) {
-  const val = useAnimatedScore(score, run);
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={run ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.4, delay }}
-      className="rounded-2xl bg-white/80 backdrop-blur-sm border border-white/70 p-4 hover:shadow-lg hover:shadow-pink-200/20 transition-all duration-300"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${color}12` }}>
-            <Icon size={16} style={{ color }} />
-          </div>
-          <span className="text-[13px] font-semibold text-gray-800">{label}</span>
-        </div>
-        <span className="text-[18px] font-bold" style={{ color }}>{val}<span className="text-[9px] font-medium opacity-50">%</span></span>
-      </div>
-      <div className="h-2 rounded-full bg-gray-100/80 overflow-hidden">
-        <motion.div
-          className="h-full rounded-full"
-          style={{ background: barColor }}
-          initial={{ width: 0 }}
-          animate={run ? { width: `${val}%` } : {}}
-          transition={{ duration: 0.6, delay: delay + 0.15, ease: "easeOut" }}
-        />
-      </div>
-      <span
-        className="inline-block mt-2 text-[10px] font-medium px-2.5 py-0.5 rounded-full"
-        style={{ background: `${color}12`, color }}
-      >
-        {val >= 90 ? "Excellent" : val >= 80 ? "Good" : "Fair"}
-      </span>
-    </motion.div>
-  );
-}
-
-function InsightCard({ text, status, delay }: { text: string; status: string; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -10 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.35, delay }}
-      className="flex items-start gap-3 px-4 py-3 rounded-xl bg-white/60 backdrop-blur-sm border border-white/50 hover:bg-white/80 transition-colors"
-    >
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${status === "positive" ? "bg-emerald-100" : "bg-amber-100"}`}>
-        {status === "positive" ? (
-          <Check size={10} className="text-emerald-500" />
-        ) : (
-          <span className="text-[10px] text-amber-500 font-bold">!</span>
-        )}
-      </div>
-      <span className="text-[13px] text-gray-600 leading-snug">{text}</span>
-    </motion.div>
-  );
-}
-
-function ProductCard({ product, delay }: { product: typeof PRODUCTS[0]; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay }}
-      className="flex items-center gap-3 p-3 rounded-xl bg-white/80 backdrop-blur-sm border border-white/70 hover:border-pink-100 hover:shadow-md transition-all duration-300"
-    >
-      <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 bg-gray-50 shadow-sm">
-        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <h5 className="text-[12px] font-semibold text-gray-800 truncate">{product.name}</h5>
-        <p className="text-[10px] text-gray-400 mt-0.5 leading-tight">{product.reason}</p>
-        <div className="flex items-center gap-1.5 mt-1.5">
-          <div className="h-1.5 flex-1 rounded-full bg-gray-100 overflow-hidden max-w-[60px]">
-            <div className="h-full rounded-full" style={{ width: `${product.score}%`, background: "linear-gradient(90deg, #EC4899, #A855F7)" }} />
-          </div>
-          <span className="text-[9px] font-semibold text-gray-400">{product.score}%</span>
-        </div>
-      </div>
-      <button className="shrink-0 text-[10px] font-semibold text-white px-3 py-1.5 rounded-full bg-gray-900 hover:bg-gray-800 transition-colors whitespace-nowrap">
-        View
-      </button>
-    </motion.div>
-  );
-}
-
-function SalonCard({ salon, delay }: { salon: typeof SALONS[0]; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay }}
-      className="rounded-xl bg-white/80 backdrop-blur-sm border border-white/70 overflow-hidden hover:shadow-lg hover:shadow-pink-200/15 transition-all duration-300"
-    >
-      <div className="h-28 overflow-hidden relative">
-        <img src={salon.image} alt={salon.name} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-        <div className="absolute bottom-2 left-2.5 flex items-center gap-1.5">
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-amber-600">
-            <Star size={9} fill="currentColor" /> {salon.rating}
-          </div>
-          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] text-gray-500">
-            <MapPin size={9} /> {salon.distance}
-          </div>
-        </div>
-      </div>
-      <div className="p-3">
-        <h5 className="text-[12px] font-semibold text-gray-800">{salon.name}</h5>
-        <p className="text-[10px] text-gray-400 mt-0.5">{salon.treatment}</p>
-        <button className="mt-2 w-full text-[10px] font-semibold text-pink-500 border border-pink-200 rounded-full py-1.5 hover:bg-pink-50 transition-colors">
-          Book Now
-        </button>
-      </div>
-    </motion.div>
   );
 }

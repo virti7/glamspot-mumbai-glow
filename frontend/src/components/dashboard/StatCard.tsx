@@ -36,7 +36,7 @@ export function StatCard({ label, value, icon, color, bgColor, growth, delay = 0
 
   return (
     <div
-      className="bg-white rounded-xl p-4 flex items-center justify-between border border-gray-100/80 shadow-[0_2px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:-translate-y-1 transition-all duration-200 cursor-default fade-up"
+      className="bg-white rounded-2xl p-5 flex items-center justify-between border border-[#E5E7EB]/60 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-default fade-up"
       style={{ animationDelay: `${delay * 0.08}s` }}
     >
       <div className="flex items-center gap-3">

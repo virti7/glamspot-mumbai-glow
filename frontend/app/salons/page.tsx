@@ -7,6 +7,7 @@ import { salonService, type Salon } from "@/services/salon.service";
 import { userService } from "@/services/user.service";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import { CustomerNavbar } from "@/components/customer/CustomerNavbar";
 import HeroSection from "@/components/salons/HeroSection";
 import SalonSearch from "@/components/salons/SalonSearch";
 import FeaturedSalons from "@/components/salons/FeaturedSalons";
@@ -110,6 +111,8 @@ export default function SalonsPage() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F6]">
+      <CustomerNavbar />
+      <div className="pt-[100px]">
       <HeroSection />
 
       <SalonSearch filters={filters} onFilterChange={setFilters} />
@@ -171,8 +174,7 @@ export default function SalonsPage() {
 
       <section className="mx-6 mb-12 mt-14 max-w-7xl lg:mx-auto">
         <div
-          className="rounded-[28px] overflow-hidden p-10 text-center relative"
-          style={{ background: "linear-gradient(135deg, #FFF7FA 0%, #FCE7F3 50%, #FFF0F5 100%)" }}
+          className="rounded-[28px] overflow-hidden p-10 text-center relative bg-gradient-to-br from-[#FFF7FA] via-[#FCE7F3] to-[#FFF0F5]"
         >
           <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full bg-pink-200/30 blur-3xl" />
           <div className="absolute -bottom-12 left-1/4 w-40 h-40 rounded-full bg-rose-200/20 blur-3xl" />
@@ -193,6 +195,7 @@ export default function SalonsPage() {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 }

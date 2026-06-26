@@ -6,9 +6,8 @@ import { api } from "@/services/api";
 import { supabase } from "@/lib/supabase";
 import {
   FileCheck, CheckCircle, XCircle, Store, User, Loader2,
-  Shield, ExternalLink, Search, Phone, Mail, Calendar,
-  Clock, MapPin, AlertTriangle,
-  RefreshCw, Sparkles,
+  ExternalLink, Search, Phone, Mail, Calendar,
+  Clock, MapPin, AlertTriangle, RefreshCw, Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -55,13 +54,11 @@ export default function AdminClaimsPage() {
   useEffect(() => {
     if (profile?.role !== "admin") return;
     fetchClaims();
-
     const channel = supabase
       .channel("admin-claims-realtime-page")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "salon_claims" }, () => { fetchClaims(); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "salon_claims" }, () => { fetchClaims(); })
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [profile, fetchClaims]);
 
@@ -102,263 +99,226 @@ export default function AdminClaimsPage() {
     rejected: claims.filter((c) => c.status === "rejected").length,
   };
 
-  const statusConfig: Record<string, { icon: any; label: string; bg: string; text: string; border: string }> = {
-    approved: {
-      icon: CheckCircle, label: "Approved",
-      bg: "bg-green-50", text: "text-green-700", border: "border-green-200",
-    },
-    rejected: {
-      icon: XCircle, label: "Rejected",
-      bg: "bg-red-50", text: "text-red-700", border: "border-red-200",
-    },
-    pending: {
-      icon: Clock, label: "Pending",
-      bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200",
-    },
+  const filterButtons = [
+    { key: "all", label: "All", icon: Sparkles, bg: "bg-gray-100", activeBg: "#111827", activeText: "white" },
+    { key: "pending", label: "Pending", icon: Clock, bg: "bg-amber-100", activeBg: "#F59E0B", activeText: "white" },
+    { key: "approved", label: "Approved", icon: CheckCircle, bg: "bg-green-100", activeBg: "#22C55E", activeText: "white" },
+    { key: "rejected", label: "Rejected", icon: XCircle, bg: "bg-red-100", activeBg: "#EF4444", activeText: "white" },
+  ];
+
+  const getStatusBadge = (status: string) => {
+    const configs: Record<string, { bg: string; color: string; icon: any }> = {
+      pending: { bg: "bg-amber-100", color: "text-amber-800", icon: Clock },
+      approved: { bg: "bg-green-100", color: "text-green-800", icon: CheckCircle },
+      rejected: { bg: "bg-red-100", color: "text-red-800", icon: XCircle },
+    };
+    const cfg = configs[status] || configs.pending;
+    const Icon = cfg.icon;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${cfg.bg} ${cfg.color}`}>
+        <Icon size={11} />
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
   };
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-7xl mx-auto">
+      {/* Page Header */}
+      <div className="flex items-center justify-between mb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-sm">
-              <FileCheck size={16} className="text-white" />
-            </div>
-            <h1 className="text-[22px] font-bold text-gray-900">Claim Requests</h1>
-          </div>
-          <p className="text-[13px] text-gray-500 mt-1">Review and manage salon ownership claims</p>
+          <h1 className="text-2xl font-bold text-[#111827] mb-1">Claim Requests</h1>
+          <p className="text-sm text-[#6B7280]">Review and manage salon ownership claims</p>
         </div>
         <button
           onClick={fetchClaims}
           disabled={loading}
-          className="px-4 py-2 rounded-xl border border-gray-200 text-[12px] font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 flex items-center gap-1.5"
+          className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-medium text-[#374151] cursor-pointer transition-all ${loading ? "opacity-50" : ""}`}
         >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={14} className={`${loading ? "animate-spin" : ""}`} />
           Refresh
         </button>
       </div>
 
+      {/* Alerts */}
       {success && (
-        <div className="mb-4 p-3.5 rounded-xl bg-green-50 border border-green-200 text-green-700 text-[13px] font-medium flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
-            <CheckCircle size={15} className="text-green-600" />
-          </div>
+        <div className="mb-4 p-3 px-4 rounded-xl bg-green-100 border border-green-200 text-green-800 text-[13px] font-medium flex items-center gap-2.5">
+          <CheckCircle size={16} />
           {success}
         </div>
       )}
       {error && (
-        <div className="mb-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px] font-medium flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-            <AlertTriangle size={15} className="text-red-600" />
-          </div>
+        <div className="mb-4 p-3 px-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px] font-medium flex items-center gap-2.5">
+          <AlertTriangle size={16} />
           {error}
         </div>
       )}
 
-      <div className="mb-5 flex flex-wrap items-center gap-2">
-        {(Object.entries(statusCounts) as [string, number][]).map(([key, count]) => {
-          const isActive = filter === key;
-          const sc = statusConfig[key as keyof typeof statusConfig];
+      {/* Filter Bar */}
+      <div className="flex items-center gap-2 mb-4">
+        {filterButtons.map((btn) => {
+          const isActive = filter === btn.key;
+          const count = statusCounts[btn.key as keyof typeof statusCounts];
           return (
             <button
-              key={key}
-              onClick={() => setFilter(key)}
-              className={`px-3.5 py-1.5 rounded-full text-[12px] font-medium transition-all flex items-center gap-1.5 ${
-                isActive
-                  ? `${sc?.bg || "bg-gray-900"} ${sc?.text || "text-white"} border ${sc?.border || "border-transparent"} shadow-sm`
-                  : "bg-white text-gray-500 border border-gray-200 hover:border-gray-300 hover:text-gray-700"
+              key={btn.key}
+              onClick={() => setFilter(btn.key)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-medium cursor-pointer transition-all ${
+                isActive ? "text-white" : "bg-white text-[#6B7280] border border-[#E5E7EB]"
               }`}
+              style={isActive ? { background: btn.activeBg } : {}}
             >
-              {key === "all" ? (
-                <Sparkles size={13} />
-              ) : sc?.icon ? (
-                <sc.icon size={13} />
-              ) : null}
-              {key === "all" ? "All" : key.charAt(0).toUpperCase() + key.slice(1)}
-              <span className={`${isActive ? "opacity-80" : "text-gray-400"} ml-0.5`}>({count})</span>
+              <btn.icon size={14} />
+              {btn.label}
+              <span className={`font-semibold ${isActive ? "opacity-80" : "opacity-60"}`}>({count})</span>
             </button>
           );
         })}
       </div>
 
-      <div className="relative mb-6">
-        <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+      {/* Search */}
+      <div className="relative mb-5">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by name, salon, phone, or email..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-[13px] text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-rose-200 focus:border-rose-300"
+          className="w-full h-11 pl-10 pr-4 rounded-xl border border-[#E5E7EB] text-[13px] text-[#111827] bg-white outline-none focus:ring-2 focus:ring-[#EC4899]/20 focus:border-[#EC4899] transition-all"
         />
       </div>
 
+      {/* Content */}
       {loading ? (
-        <div className="text-center py-20 text-gray-400 bg-white rounded-2xl border border-gray-100">
-          <Loader2 size={24} className="animate-spin mx-auto mb-3" />
-          <p className="font-medium text-[14px]">Loading claims...</p>
+        <div className="text-center py-20 bg-white rounded-2xl border border-[#E5E7EB]/60">
+          <Loader2 size={24} className="text-gray-300 mx-auto mb-3 animate-spin" />
+          <p className="text-sm font-medium text-[#6B7280]">Loading claims...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400 bg-white rounded-2xl border border-gray-100">
-          <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
-            <FileCheck size={32} className="text-gray-300" />
+        <div className="text-center py-20 bg-white rounded-2xl border border-[#E5E7EB]/60">
+          <div className="w-16 h-16 rounded-xl bg-[#FAFAFB] flex items-center justify-center mx-auto mb-4">
+            <FileCheck size={28} className="text-gray-300" />
           </div>
-          <p className="font-medium text-[14px] text-gray-500">No claims found</p>
-          <p className="text-[12px] mt-1 text-gray-400">{search ? "Try a different search term" : "No claims have been submitted yet"}</p>
+          <p className="text-[15px] font-semibold text-[#374151] mb-1">No claims found</p>
+          <p className="text-[13px] text-[#9CA3AF]">{search ? "Try a different search term" : "No claims have been submitted yet"}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filtered.map((claim) => {
             const isPending = claim.status === "pending";
-            const sc = statusConfig[claim.status as keyof typeof statusConfig] || statusConfig.pending;
-            const StatusIcon = sc.icon;
             return (
               <div
                 key={claim.id}
-                className={`bg-white rounded-2xl border overflow-hidden transition-all hover:shadow-md ${
-                  isPending ? "border-amber-200 shadow-sm shadow-amber-100/50" : "border-gray-100"
+                className={`bg-white rounded-2xl border overflow-hidden transition-all ${
+                  isPending ? "border-amber-300 shadow-md shadow-amber-100" : "border-[#E5E7EB]/60"
                 }`}
               >
-                <div className={`px-4 py-3 border-b flex items-center justify-between ${
-                  isPending ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-100" : "bg-gray-50/50 border-gray-100"
+                {/* Card Header */}
+                <div className={`px-4 py-3.5 border-b border-[#E5E7EB]/60 flex items-center justify-between ${
+                  isPending ? "bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7]" : "bg-[#FAFAFB]"
                 }`}>
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center shrink-0">
-                      <Store size={15} className="text-rose-500" />
+                    <div className="w-8 h-8 rounded-xl bg-white border border-[#E5E7EB]/60 flex items-center justify-center flex-shrink-0">
+                      <Store size={15} className="text-[#EC4899]" />
                     </div>
                     <div className="min-w-0">
                       <Link
                         href={claim.salon?.slug ? `/salons/${claim.salon.slug}` : "#"}
                         target={claim.salon?.slug ? "_blank" : undefined}
-                        className="text-[13px] font-semibold text-gray-900 truncate block hover:text-rose-600 transition"
+                        className="text-[13px] font-semibold text-[#111827] truncate block no-underline"
                       >
                         {claim.salon_name || claim.salon?.name || "Unknown Salon"}
                       </Link>
                       {claim.salon?.locality && (
-                        <p className="text-[11px] text-gray-400 flex items-center gap-1">
-                          <MapPin size={9} />
-                          {claim.salon.locality}, {claim.salon.city || ""}
+                        <p className="text-[11px] text-[#9CA3AF] flex items-center gap-1">
+                          <MapPin size={9} />{claim.salon.locality}, {claim.salon.city || ""}
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border shrink-0 ml-2 ${sc.bg} ${sc.text} ${sc.border}`}>
-                    <StatusIcon size={10} />
-                    {sc.label}
-                  </span>
+                  {getStatusBadge(claim.status)}
                 </div>
 
-                <div className="p-4 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0">
+                {/* Card Body */}
+                <div className="p-4">
+                  {/* Claimant Info */}
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#EC4899] to-[#DB2777] text-white text-[13px] font-bold flex items-center justify-center flex-shrink-0">
                       {claim.full_name?.charAt(0)?.toUpperCase() || "?"}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-semibold text-gray-900 truncate">{claim.full_name || "Unknown"}</p>
-                      <div className="flex items-center gap-3 text-[11px] text-gray-400 mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Mail size={9} />
-                          {claim.email || "-"}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Phone size={9} />
-                          {claim.phone || "-"}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-[#111827] truncate">{claim.full_name || "Unknown"}</p>
+                      <div className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">
+                        <span className="flex items-center gap-0.5"><Mail size={9} />{claim.email || "-"}</span>
+                        <span className="flex items-center gap-0.5"><Phone size={9} />{claim.phone || "-"}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11px]">
-                    <div className="bg-gray-50 rounded-lg p-2.5">
-                      <p className="text-gray-400 font-medium">Business Email</p>
-                      <p className="text-gray-800 font-medium truncate mt-0.5">{claim.business_email || "-"}</p>
+                  {/* Business Info */}
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="p-2 rounded-xl bg-[#FAFAFB]">
+                      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wider">Business Email</p>
+                      <p className="text-[11px] font-medium text-[#374151] truncate mt-0.5">{claim.business_email || "-"}</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-2.5">
-                      <p className="text-gray-400 font-medium">Business Phone</p>
-                      <p className="text-gray-800 font-medium truncate mt-0.5">{claim.business_phone || "-"}</p>
+                    <div className="p-2 rounded-xl bg-[#FAFAFB]">
+                      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wider">Business Phone</p>
+                      <p className="text-[11px] font-medium text-[#374151] truncate mt-0.5">{claim.business_phone || "-"}</p>
                     </div>
                   </div>
 
+                  {/* Verification Message */}
                   {claim.verification_message && (
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Verification Message</p>
-                      <p className="text-[12px] text-gray-700 leading-relaxed">{claim.verification_message}</p>
+                    <div className="p-3 rounded-xl bg-[#FAFAFB] mb-3">
+                      <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1">Verification Message</p>
+                      <p className="text-[12px] text-[#374151] leading-relaxed">{claim.verification_message}</p>
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-[11px] text-gray-400 pt-1">
-                    <span className="flex items-center gap-1">
-                      <Calendar size={10} />
-                      {new Date(claim.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                    </span>
-                    {claim.approved_at && (
-                      <span className="text-green-600 flex items-center gap-1">
-                        <CheckCircle size={10} />
-                        Approved {new Date(claim.approved_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                      </span>
-                    )}
-                    {claim.rejected_at && (
-                      <span className="text-red-500 flex items-center gap-1">
-                        <XCircle size={10} />
-                        Rejected {new Date(claim.rejected_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                      </span>
-                    )}
+                  {/* Date */}
+                  <div className="flex items-center gap-1 text-[11px] text-[#9CA3AF]">
+                    <Calendar size={10} />
+                    {new Date(claim.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                   </div>
                 </div>
 
-                <div className={`px-4 py-3.5 border-t ${
-                  isPending ? "bg-amber-50/30 border-amber-100" : "bg-gray-50/30 border-gray-100"
-                }`}>
+                {/* Card Footer */}
+                <div className={`px-4 py-3 border-t border-[#E5E7EB]/60 ${isPending ? "bg-[#FFFEF5]" : "bg-[#FAFAFB]"}`}>
                   {isPending ? (
-                    <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleStatus(claim.id, "approved")}
                         disabled={processing?.id === claim.id}
-                        className="flex-1 py-2.5 rounded-lg bg-green-600 text-white text-[13px] font-bold hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                        className={`flex-1 py-2.5 rounded-xl bg-[#22C55E] text-white text-[13px] font-semibold border-none cursor-pointer flex items-center justify-center gap-1.5 transition-all ${processing?.id === claim.id ? "opacity-50" : ""}`}
                       >
-                        {processing?.id === claim.id && processing?.action === "approved" ? (
-                          <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                          <CheckCircle size={16} />
-                        )}
+                        {processing?.id === claim.id && processing?.action === "approved" ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle size={15} />}
                         {processing?.id === claim.id && processing?.action === "approved" ? "Approving..." : "Approve"}
                       </button>
                       <button
                         onClick={() => handleStatus(claim.id, "rejected")}
                         disabled={processing?.id === claim.id}
-                        className="flex-1 py-2.5 rounded-lg bg-red-600 text-white text-[13px] font-bold hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                        className={`flex-1 py-2.5 rounded-xl bg-[#EF4444] text-white text-[13px] font-semibold border-none cursor-pointer flex items-center justify-center gap-1.5 transition-all ${processing?.id === claim.id ? "opacity-50" : ""}`}
                       >
-                        {processing?.id === claim.id && processing?.action === "rejected" ? (
-                          <Loader2 size={15} className="animate-spin" />
-                        ) : (
-                          <XCircle size={16} />
-                        )}
+                        {processing?.id === claim.id && processing?.action === "rejected" ? <Loader2 size={15} className="animate-spin" /> : <XCircle size={15} />}
                         {processing?.id === claim.id && processing?.action === "rejected" ? "Rejecting..." : "Reject"}
                       </button>
                       {claim.salon?.slug && (
                         <Link
                           href={`/salons/${claim.salon.slug}`}
                           target="_blank"
-                          className="p-2.5 rounded-lg border border-gray-200 text-gray-400 hover:text-rose-500 hover:border-rose-200 hover:bg-rose-50 transition flex items-center justify-center shrink-0"
+                          className="w-[42px] flex items-center justify-center rounded-xl border border-[#E5E7EB] text-[#9CA3AF] no-underline transition-all"
                         >
                           <ExternalLink size={15} />
                         </Link>
                       )}
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center justify-between">
                       {claim.salon?.slug && (
-                        <Link
-                          href={`/salons/${claim.salon.slug}`}
-                          target="_blank"
-                          className="text-[12px] text-rose-500 font-medium hover:underline flex items-center gap-1"
-                        >
-                          <ExternalLink size={12} />
-                          View Salon
+                        <Link href={`/salons/${claim.salon.slug}`} target="_blank" className="text-[12px] text-[#EC4899] font-medium no-underline flex items-center gap-1">
+                          <ExternalLink size={12} /> View Salon
                         </Link>
                       )}
-                      <span className="text-[11px] text-gray-400">
-                        ID: {claim.id.slice(0, 8)}...
-                      </span>
+                      <span className="text-[11px] text-[#9CA3AF]">ID: {claim.id.slice(0, 8)}...</span>
                     </div>
                   )}
                 </div>
@@ -368,8 +328,8 @@ export default function AdminClaimsPage() {
         </div>
       )}
 
-      <div className="mt-5 text-[12px] text-gray-400 flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+      {/* Footer */}
+      <div className="mt-4 text-[12px] text-[#9CA3AF]">
         Showing {filtered.length} of {claims.length} claim{claims.length !== 1 ? "s" : ""}
       </div>
     </div>

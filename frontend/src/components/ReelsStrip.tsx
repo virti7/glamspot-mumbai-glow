@@ -51,7 +51,7 @@ export function ReelsStrip() {
   }, []);
 
   return (
-    <section className="bg-[#F8F8F8] py-[60px]">
+    <section className="bg-[#FAFAFB] py-[60px]">
       <div className="text-center px-6">
         <h2 className="font-display text-[#111] text-3xl md:text-[36px] mb-3">
           Live From Mumbai Salons
@@ -100,7 +100,7 @@ function ReelCard({
       />
 
       <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-        <div className="w-[24px] h-[24px] rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center overflow-hidden border border-white/30">
+        <div className="w-[24px] h-[24px] rounded-full bg-gradient-to-br from-[#EC4899] to-[#DB2777] flex items-center justify-center overflow-hidden border border-white/30">
           <img src={r.image} alt="" className="w-full h-full object-cover" />
         </div>
         <span className="text-white text-[10px] font-semibold">{r.username}</span>

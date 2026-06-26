@@ -4,9 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/services/api";
 import { BarChart3, Loader2, Shield, TrendingUp, Users, Store, Calendar, Star, IndianRupee } from "lucide-react";
-import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area,
-} from "recharts";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
 interface AnalyticsData {
   period: string;
@@ -23,38 +21,15 @@ export default function AdminAnalyticsPage() {
   const [error, setError] = useState("");
   const [period, setPeriod] = useState("30d");
 
-  const fetchAnalytics = (p: string) => {
-    setLoading(true);
-    api.get<AnalyticsData>(`/admin/analytics?period=${p}`)
-      .then(setData)
-      .catch(() => setError("Failed to load analytics"))
-      .finally(() => setLoading(false));
-  };
-
+  const fetchAnalytics = (p: string) => { setLoading(true); api.get<AnalyticsData>(`/admin/analytics?period=${p}`).then(setData).catch(() => setError("Failed to load analytics")).finally(() => setLoading(false)); };
   useEffect(() => { if (profile?.role === "admin") fetchAnalytics(period); }, [profile, period]);
 
   if (profile?.role !== "admin") {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="text-center">
-          <Shield size={48} className="mx-auto text-red-400 mb-4" />
-          <h2 className="text-[#111] text-xl font-bold mb-1">Access Denied</h2>
-          <p className="text-[#6B7280] text-[13px]">Admin Only</p>
-        </div>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-[60vh]"><Shield size={48} className="text-red-400" /></div>;
   }
 
-  const periods = [
-    { key: "today", label: "Today" },
-    { key: "7d", label: "7 Days" },
-    { key: "30d", label: "30 Days" },
-    { key: "90d", label: "90 Days" },
-    { key: "1y", label: "1 Year" },
-  ];
-
-  const trendToChartData = (trend: Record<string, number>) =>
-    Object.entries(trend).map(([date, value]) => ({ date, value }));
+  const periods = [{ key: "today", label: "Today" }, { key: "7d", label: "7 Days" }, { key: "30d", label: "30 Days" }, { key: "90d", label: "90 Days" }, { key: "1y", label: "1 Year" }];
+  const trendToChartData = (trend: Record<string, number>) => Object.entries(trend).map(([date, value]) => ({ date, value }));
 
   const metricCards = data ? [
     { label: "New Users", value: data.users.total, icon: Users, color: "#3B82F6", bg: "bg-blue-50" },
@@ -65,145 +40,81 @@ export default function AdminAnalyticsPage() {
     { label: "Reviews", value: data.reviews.total, icon: Star, color: "#F43F5E", bg: "bg-rose-50" },
   ] : [];
 
+  const statusStyles: Record<string, { bg: string; color: string }> = {
+    pending: { bg: "bg-amber-100", color: "text-amber-800" }, confirmed: { bg: "bg-blue-100", color: "text-blue-800" },
+    completed: { bg: "bg-green-100", color: "text-green-800" }, cancelled: { bg: "bg-red-100", color: "text-red-800" },
+  };
+
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <div className="flex items-center gap-2">
-          <BarChart3 size={24} className="text-[#FF4FA2]" />
-          <h1 className="text-[#111] text-2xl md:text-3xl font-bold">Analytics</h1>
-        </div>
-        <div className="flex gap-2">
+    <div className="max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div><h1 className="text-2xl font-bold text-[#111827] mb-1">Analytics</h1></div>
+        <div className="flex gap-1.5">
           {periods.map((p) => (
-            <button
-              key={p.key}
-              onClick={() => setPeriod(p.key)}
-              className={`px-4 py-1.5 rounded-full text-[12px] font-medium border transition-all ${
-                period === p.key
-                  ? "bg-[#111] text-white border-[#111]"
-                  : "bg-white text-[#6B7280] border-gray-200 hover:border-gray-300"
+            <button key={p.key} onClick={() => setPeriod(p.key)}
+              className={`px-3.5 py-1.5 rounded-full text-[13px] font-medium cursor-pointer transition-all ${
+                period === p.key ? "bg-[#111827] text-white" : "bg-white text-[#6B7280] border border-[#E5E7EB]"
               }`}
-            >
-              {p.label}
-            </button>
+            >{p.label}</button>
           ))}
         </div>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">{error}</div>
-      )}
+      {error && <div className="mb-4 p-3 px-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-[13px]">{error}</div>}
 
       {loading || !data ? (
-        <div className="flex items-center justify-center h-[40vh]"><Loader2 size={24} className="animate-spin text-gray-300" /></div>
+        <div className="flex items-center justify-center min-h-[40vh]"><Loader2 size={24} className="text-gray-300 animate-spin" /></div>
       ) : (
         <>
-          {/* Metric Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-6">
             {metricCards.map((card) => (
-              <div key={card.label} className="bg-white rounded-xl p-4 border border-gray-100">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${card.bg}`}>
-                  <card.icon size={16} style={{ color: card.color }} />
-                </div>
-                <p className="text-lg font-bold text-[#111]">{card.value}</p>
+              <div key={card.label} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-4">
+                <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center mb-2.5`}><card.icon size={17} style={{ color: card.color }} /></div>
+                <p className="text-[22px] font-bold text-[#111827]">{card.value}</p>
                 <p className="text-[11px] text-[#6B7280] font-medium">{card.label}</p>
               </div>
             ))}
           </div>
 
-          {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* User Growth */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100">
-              <h3 className="font-semibold text-[#111] text-[14px] mb-4">User Growth</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendToChartData(data.users.trend)}>
-                    <defs>
-                      <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="value" stroke="#3B82F6" strokeWidth={2} fill="url(#userGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+            {[
+              { title: "User Growth", data: trendToChartData(data.users.trend), color: "#3B82F6", id: "userGrad" },
+              { title: "Salon Growth", data: trendToChartData(data.salons.trend), color: "#22C55E", id: "salonGrad" },
+              { title: "Booking Trends", data: trendToChartData(data.bookings.trend), color: "#EC4899", id: "bookingGrad" },
+              { title: "Revenue Trends", data: trendToChartData(data.bookings.revenueTrend), color: "#F59E0B", id: "revGrad" },
+            ].map((chart) => (
+              <div key={chart.title} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
+                <h3 className="text-sm font-semibold text-[#111827] mb-4">{chart.title}</h3>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chart.data}>
+                      <defs>
+                        <linearGradient id={chart.id} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={chart.color} stopOpacity={0.1} />
+                          <stop offset="95%" stopColor={chart.color} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <Tooltip />
+                      <Area type="monotone" dataKey="value" stroke={chart.color} strokeWidth={2} fill={`url(#${chart.id})`} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-            </div>
-
-            {/* Salon Growth */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100">
-              <h3 className="font-semibold text-[#111] text-[14px] mb-4">Salon Growth</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={trendToChartData(data.salons.trend)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#22C55E" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Booking Trends */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100">
-              <h3 className="font-semibold text-[#111] text-[14px] mb-4">Booking Trends</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendToChartData(data.bookings.trend)}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip />
-                    <Line type="monotone" dataKey="value" stroke="#EC4899" strokeWidth={2} dot={false} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Revenue Trends */}
-            <div className="bg-white rounded-xl p-5 border border-gray-100">
-              <h3 className="font-semibold text-[#111] text-[14px] mb-4">Revenue Trends</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={trendToChartData(data.bookings.revenueTrend)}>
-                    <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.1} />
-                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <Tooltip formatter={(value: number) => [`₹${value.toLocaleString()}`, "Revenue"]} />
-                    <Area type="monotone" dataKey="value" stroke="#F59E0B" strokeWidth={2} fill="url(#revGrad)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+            ))}
           </div>
 
-          {/* Booking Status Breakdown */}
-          <div className="bg-white rounded-xl p-5 border border-gray-100 mb-8">
-            <h3 className="font-semibold text-[#111] text-[14px] mb-4">Booking Status Breakdown</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
+            <h3 className="text-sm font-semibold text-[#111827] mb-4">Booking Status Breakdown</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(data.bookings.byStatus).map(([status, count]) => {
-                const colors: Record<string, string> = {
-                  pending: "bg-amber-50 text-amber-700 border-amber-200",
-                  confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-                  completed: "bg-green-50 text-green-700 border-green-200",
-                  cancelled: "bg-red-50 text-red-700 border-red-200",
-                };
+                const ss = statusStyles[status] || statusStyles.pending;
                 return (
-                  <div key={status} className={`rounded-xl p-4 border ${colors[status] || "bg-gray-50 border-gray-200"}`}>
-                    <p className="text-2xl font-bold">{count as number}</p>
-                    <p className="text-[13px] font-medium capitalize">{status}</p>
+                  <div key={status} className={`p-4 rounded-xl ${ss.bg}`}>
+                    <p className="text-2xl font-bold" style={{ color: ss.color === "text-amber-800" ? "#92400E" : ss.color === "text-blue-800" ? "#1E40AF" : ss.color === "text-green-800" ? "#166534" : "#991B1B" }}>{count as number}</p>
+                    <p className="text-[13px] font-medium capitalize mt-0.5" style={{ color: ss.color === "text-amber-800" ? "#92400E" : ss.color === "text-blue-800" ? "#1E40AF" : ss.color === "text-green-800" ? "#166534" : "#991B1B" }}>{status}</p>
                   </div>
                 );
               })}
