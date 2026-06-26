@@ -478,7 +478,7 @@ adminRouter.get("/ownership-history", async (_req, res) => {
 
 // ── BOOKINGS ──
 
-const BOOKING_SELECT = "*, salon:salons(name, slug, locality, city, cover_image, phone), user:profiles(full_name, email, phone), booking_services(*), payment:payments(*), staff:salon_staff(id, name, role, avatar_url)";
+const BOOKING_SELECT = "*, salon:salons!salon_id(id, name, slug, locality, city, cover_image, phone, owner_id), user:profiles!user_id(full_name, email, phone), booking_services(*), payment:payments(*), staff:salon_staff!staff_id(id, name, role, avatar_url)";
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
   pending: ["confirmed", "cancelled"],
@@ -489,48 +489,314 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   cancelled: [],
 };
 
-adminRouter.get("/bookings/stats", async (_req, res) => {
+adminRouter.get("/bookings/stats", async (req, res) => {
   try {
     const supabase = getSupabaseServerClient();
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
+    const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-    const [totalRes, todayRes, pendingRes, confirmedRes, completedRes, cancelledRes, completedRevenueRes, todayRevenueRes] = await Promise.all([
-      supabase.from("bookings").select("id", { count: "exact", head: true }),
-      supabase.from("bookings").select("id", { count: "exact", head: true }).gte("created_at", today),
-      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "pending"),
-      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "confirmed"),
-      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "completed"),
-      supabase.from("bookings").select("id", { count: "exact", head: true }).eq("status", "cancelled"),
-      supabase.from("bookings").select("total_amount").eq("status", "completed"),
-      supabase.from("bookings").select("total_amount").eq("status", "completed").gte("created_at", today),
+    const isRevenueBooking = (b: any) => {
+      const src = (b.booking_source || "").toLowerCase();
+      const ps = (b.payment_status || "").toLowerCase();
+      const st = (b.status || "").toLowerCase();
+      const isPlatform = src === "website" || src === "glamspot";
+      const isPaid = ps === "paid" || ps === "completed";
+      const isActive = st !== "cancelled" && st !== "no_show" && st !== "refunded";
+      return isPlatform && isPaid && isActive;
+    };
+
+    const [rawBookings, rawPayments] = await Promise.all([
+      supabase.from("bookings").select("id, status, booking_date, created_at, total_amount, booking_source, payment_status, updated_at, salon:salons!salon_id(id, name), user:profiles!user_id(full_name, email)").order("created_at", { ascending: false }),
+      supabase.from("payments").select("id, amount, status, refund_amount, created_at, payment_method, booking_id"),
     ]);
 
-    const totalRevenue = (completedRevenueRes.data ?? []).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
-    const todayRevenue = (todayRevenueRes.data ?? []).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
-    const totalCount = totalRes.count ?? 0;
+    let allBookings: any[] = rawBookings.data ?? [];
+    if (rawBookings.error) {
+      console.error("[Admin] Stats bookings query error:", JSON.stringify(rawBookings.error));
+      const basic = await supabase.from("bookings").select("id, status, booking_date, created_at, total_amount, booking_source, payment_status, updated_at").order("created_at", { ascending: false });
+      if (basic.error) {
+        console.error("[Admin] Stats basic query error:", JSON.stringify(basic.error));
+        res.status(500).json({ error: basic.error.message });
+        return;
+      }
+      allBookings = basic.data ?? [];
+    }
+    const allPayments: any[] = rawPayments.data ?? [];
+    if (rawPayments.error) {
+      console.error("[Admin] Stats payments query error:", JSON.stringify(rawPayments.error));
+    }
+
+    const totalCount = allBookings.length;
+
+    const todayBookings = allBookings.filter((b: any) => b.created_at?.startsWith(today)).length;
+    const pendingBookings = allBookings.filter((b: any) => b.status === "pending").length;
+    const confirmedBookings = allBookings.filter((b: any) => b.status === "confirmed").length;
+    const completedBookings = allBookings.filter((b: any) => b.status === "completed").length;
+    const cancelledBookings = allBookings.filter((b: any) => b.status === "cancelled").length;
+    const checkedInBookings = allBookings.filter((b: any) => b.status === "checked_in").length;
+    const inProgressBookings = allBookings.filter((b: any) => b.status === "in_progress").length;
+    const noShowBookings = allBookings.filter((b: any) => b.status === "no_show").length;
+
+    const upcomingBookings = allBookings.filter((b: any) => {
+      const bd = b.booking_date;
+      return bd && bd >= today && b.status !== "cancelled" && b.status !== "completed" && b.status !== "no_show";
+    }).length;
+
+    const revenueBookings = allBookings.filter(isRevenueBooking);
+    const totalRevenue = revenueBookings.reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const todayRevenue = revenueBookings.filter((b: any) => b.created_at?.startsWith(today)).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const weekRevenue = revenueBookings.filter((b: any) => b.created_at >= weekStart).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const monthRevenue = revenueBookings.filter((b: any) => b.created_at >= monthStart).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const yearRevenue = revenueBookings.filter((b: any) => b.created_at >= yearStart).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
     const averageBookingValue = totalCount > 0 ? +(totalRevenue / totalCount).toFixed(2) : 0;
 
+    const paidPayments = allPayments.filter((p: any) => p.status === "completed" || p.status === "paid");
+    const refundedPayments = allPayments.filter((p: any) => p.status === "refunded");
+    const pendingPayments = allPayments.filter((p: any) => p.status === "pending");
+    const failedPayments = allPayments.filter((p: any) => p.status === "failed");
+    const totalPlatformFees = revenueBookings.reduce((s: number, b: any) => s + (b.platform_fee || 0), 0);
+    const totalRefundAmount = refundedPayments.reduce((s: number, p: any) => s + (p.refund_amount || p.amount || 0), 0);
+    const totalPendingAmount = pendingPayments.reduce((s: number, p: any) => s + (p.amount || 0), 0);
+
+    const uniqueCustomers = new Set(allBookings.map((b: any) => b.user_id)).size;
+    const uniqueSalons = new Set(allBookings.map((b: any) => b.salon_id)).size;
+    const customerBookingMap = new Map<string, number>();
+    allBookings.forEach((b: any) => { if (b.user_id) customerBookingMap.set(b.user_id, (customerBookingMap.get(b.user_id) || 0) + 1); });
+    const returningCustomers = [...customerBookingMap.values()].filter(c => c > 1).length;
+    const newCustomers = uniqueCustomers - returningCustomers;
+    const averageRevenuePerSalon = uniqueSalons > 0 ? +(totalRevenue / uniqueSalons).toFixed(2) : 0;
+    const averageRevenuePerCustomer = uniqueCustomers > 0 ? +(totalRevenue / uniqueCustomers).toFixed(2) : 0;
+    const paymentSuccessRate = paidPayments.length + failedPayments.length > 0 ? +((paidPayments.length / (paidPayments.length + failedPayments.length)) * 100).toFixed(1) : 0;
+    const paymentFailureRate = 100 - paymentSuccessRate;
+
     res.json({
-      totalBookings: totalRes.count ?? 0,
-      todayBookings: todayRes.count ?? 0,
-      pendingBookings: pendingRes.count ?? 0,
-      confirmedBookings: confirmedRes.count ?? 0,
-      completedBookings: completedRes.count ?? 0,
-      cancelledBookings: cancelledRes.count ?? 0,
+      totalBookings: totalCount,
+      todayBookings,
+      upcomingBookings,
+      completedBookings,
+      cancelledBookings,
+      pendingBookings,
+      confirmedBookings,
+      checkedInBookings,
+      inProgressBookings,
+      noShowBookings,
       totalRevenue,
       todayRevenue,
+      weekRevenue,
+      monthRevenue,
+      yearRevenue,
+      platformFees: totalPlatformFees,
       averageBookingValue,
+      averageRevenuePerSalon,
+      averageRevenuePerCustomer,
+      refundAmount: totalRefundAmount,
+      pendingPaymentAmount: totalPendingAmount,
+      completedPayments: paidPayments.length,
+      cancelledPayments: cancelledBookings,
+      refundedPayments: refundedPayments.length,
+      paymentSuccessRate,
+      paymentFailureRate,
+      uniqueCustomers,
+      uniqueSalons,
+      returningCustomers,
+      newCustomers,
+      averageRating: 0,
     });
-  } catch { res.status(500).json({ error: "Failed to fetch booking stats" }); }
+  } catch (err) { console.error("[Admin] Booking stats error:", err); res.status(500).json({ error: "Failed to fetch booking stats" }); }
 });
 
-adminRouter.get("/bookings/export", async (_req, res) => {
+adminRouter.get("/bookings/analytics", async (req, res) => {
   try {
     const supabase = getSupabaseServerClient();
-    const { data, error } = await supabase
+    const period = (req.query.period as string) || "30d";
+    const now = new Date();
+    let startDate: Date;
+    let dateTrunc: string;
+    switch (period) {
+      case "today": startDate = new Date(now.toISOString().slice(0, 10)); dateTrunc = "hour"; break;
+      case "7d": startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); dateTrunc = "day"; break;
+      case "30d": startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); dateTrunc = "day"; break;
+      case "90d": startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000); dateTrunc = "week"; break;
+      case "1y": startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000); dateTrunc = "month"; break;
+      default: startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); dateTrunc = "day";
+    }
+    const startStr = startDate.toISOString();
+
+    const isRevenueBooking = (b: any) => {
+      const src = (b.booking_source || "").toLowerCase();
+      const ps = (b.payment_status || "").toLowerCase();
+      const st = (b.status || "").toLowerCase();
+      return (src === "website" || src === "glamspot") && (ps === "paid" || ps === "completed") && st !== "cancelled" && st !== "no_show" && st !== "refunded";
+    };
+
+    const [bookingsRes, paymentsRes, usersRes, salonsRes, reviewsRes] = await Promise.all([
+      supabase.from("bookings").select("id, total_amount, status, created_at, booking_source, payment_status, salon_id, user_id, subtotal, platform_fee, discount_amount, tax_amount, booking_services(service_name, price)").gte("created_at", startStr),
+      supabase.from("payments").select("id, amount, status, refund_amount, payment_method, created_at").gte("created_at", startStr),
+      supabase.from("profiles").select("id, created_at").gte("created_at", startStr),
+      supabase.from("salons").select("id, name, created_at").gte("created_at", startStr),
+      supabase.from("reviews").select("id, rating, created_at").gte("created_at", startStr),
+    ]);
+
+    if (bookingsRes.error) console.error("[Admin] Analytics bookings error:", JSON.stringify(bookingsRes.error));
+
+    const allBookings = bookingsRes.data ?? [];
+    const allPayments = paymentsRes.data ?? [];
+
+    const truncKey = (dateStr: string) => {
+      const d = new Date(dateStr);
+      if (dateTrunc === "hour") return d.toISOString().slice(0, 13);
+      if (dateTrunc === "day") return d.toISOString().slice(0, 10);
+      if (dateTrunc === "week") { const w = new Date(d); w.setDate(d.getDate() - d.getDay()); return w.toISOString().slice(0, 10); }
+      return d.toISOString().slice(0, 7);
+    };
+
+    const countByDate = (items: any[]) => {
+      const map: Record<string, number> = {};
+      for (const item of items) { const k = truncKey(item.created_at); map[k] = (map[k] || 0) + 1; }
+      return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value }));
+    };
+
+    const revenueByDate = (items: any[]) => {
+      const map: Record<string, number> = {};
+      for (const item of items) {
+        if (!isRevenueBooking(item)) continue;
+        const k = truncKey(item.created_at);
+        map[k] = (map[k] || 0) + (item.total_amount || 0);
+      }
+      return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value: +value.toFixed(2) }));
+    };
+
+    const bookingsByStatus: Record<string, number> = {};
+    allBookings.forEach((b: any) => { bookingsByStatus[b.status] = (bookingsByStatus[b.status] || 0) + 1; });
+
+    const bookingsBySource: Record<string, number> = {};
+    allBookings.forEach((b: any) => { const src = b.booking_source || "unknown"; bookingsBySource[src] = (bookingsBySource[src] || 0) + 1; });
+
+    const paymentsByMethod: Record<string, number> = {};
+    allPayments.forEach((p: any) => { const m = p.payment_method || "unknown"; paymentsByMethod[m] = (paymentsByMethod[m] || 0) + 1; });
+
+    const paymentsByStatus: Record<string, number> = {};
+    allPayments.forEach((p: any) => { paymentsByStatus[p.status] = (paymentsByStatus[p.status] || 0) + 1; });
+
+    const serviceMap: Record<string, number> = {};
+    allBookings.forEach((b: any) => {
+      (b.booking_services || []).forEach((s: any) => { serviceMap[s.service_name] = (serviceMap[s.service_name] || 0) + 1; });
+    });
+    const topServices = Object.entries(serviceMap).sort(([, a], [, b]) => b - a).slice(0, 10).map(([name, count]) => ({ name, count }));
+
+    const salonMap: Record<string, { name: string; count: number; revenue: number }> = {};
+    allBookings.forEach((b: any) => {
+      if (!b.salon_id) return;
+      if (!salonMap[b.salon_id]) salonMap[b.salon_id] = { name: b.salon_id, count: 0, revenue: 0 };
+      salonMap[b.salon_id].count++;
+      if (isRevenueBooking(b)) salonMap[b.salon_id].revenue += b.total_amount || 0;
+    });
+    const topSalons = Object.entries(salonMap).sort(([, a], [, b]) => b.revenue - a.revenue).slice(0, 10).map(([id, d]) => ({ salon_id: id, name: d.name, bookings: d.count, revenue: +d.revenue.toFixed(2) }));
+
+    const totalRevenue = allBookings.filter(isRevenueBooking).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const totalPlatformFees = allBookings.filter(isRevenueBooking).reduce((s: number, b: any) => s + (b.platform_fee || 0), 0);
+    const totalRefunds = allPayments.filter((p: any) => p.status === "refunded").reduce((s: number, p: any) => s + (p.refund_amount || p.amount || 0), 0);
+
+    const platformFeeByDate = (() => {
+      const map: Record<string, number> = {};
+      allBookings.forEach((b: any) => {
+        if (!isRevenueBooking(b)) return;
+        const k = truncKey(b.created_at);
+        map[k] = (map[k] || 0) + (b.platform_fee || 0);
+      });
+      return Object.entries(map).sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value: +value.toFixed(2) }));
+    })();
+
+    const customerBookingMap = new Map<string, number>();
+    allBookings.forEach((b: any) => { if (b.user_id) customerBookingMap.set(b.user_id, (customerBookingMap.get(b.user_id) || 0) + 1); });
+    const repeatCustomers = [...customerBookingMap.values()].filter(c => c > 1).length;
+    const newCustomers = customerBookingMap.size - repeatCustomers;
+
+    const cancellationRate = allBookings.length > 0 ? +(((bookingsByStatus["cancelled"] || 0) / allBookings.length) * 100).toFixed(1) : 0;
+    const refundRate = allPayments.length > 0 ? +((allPayments.filter((p: any) => p.status === "refunded").length / allPayments.length) * 100).toFixed(1) : 0;
+
+    const peakHours: Record<string, number> = {};
+    allBookings.forEach((b: any) => {
+      if (b.start_time) {
+        const hour = String(b.start_time).slice(0, 2);
+        peakHours[hour] = (peakHours[hour] || 0) + 1;
+      }
+    });
+    const peakDays: Record<string, number> = {};
+    allBookings.forEach((b: any) => {
+      if (b.booking_date) {
+        const day = new Date(b.booking_date).toLocaleDateString("en-US", { weekday: "short" });
+        peakDays[day] = (peakDays[day] || 0) + 1;
+      }
+    });
+
+    const durationMinutes: number[] = [];
+    allBookings.forEach((b: any) => {
+      const svcs = b.booking_services || [];
+      svcs.forEach((s: any) => {
+        if (s.duration_minutes) durationMinutes.push(s.duration_minutes);
+      });
+    });
+    const avgDuration = durationMinutes.length > 0 ? Math.round(durationMinutes.reduce((a, b) => a + b, 0) / durationMinutes.length) : 0;
+    const avgBookingValue = allBookings.length > 0 ? +(totalRevenue / allBookings.filter(isRevenueBooking).length || 0).toFixed(2) : 0;
+
+    res.json({
+      period,
+      overview: {
+        totalBookings: allBookings.length,
+        totalRevenue: +totalRevenue.toFixed(2),
+        totalPlatformFees: +totalPlatformFees.toFixed(2),
+        totalRefunds: +totalRefunds.toFixed(2),
+        averageBookingValue: avgBookingValue,
+        averageDuration: avgDuration,
+        paymentSuccessRate: allPayments.length > 0 ? +((allPayments.filter((p: any) => p.status === "completed" || p.status === "paid").length / allPayments.length) * 100).toFixed(1) : 0,
+        cancellationRate,
+        refundRate,
+        repeatCustomers,
+        newCustomers,
+      },
+      charts: {
+        revenueTrend: revenueByDate(allBookings),
+        bookingTrend: countByDate(allBookings),
+        platformFeeTrend: platformFeeByDate,
+        userGrowth: countByDate(usersRes.data ?? []),
+        salonGrowth: countByDate(salonsRes.data ?? []),
+        reviewGrowth: countByDate(reviewsRes.data ?? []),
+      },
+      distributions: {
+        bookingStatus: Object.entries(bookingsByStatus).map(([status, count]) => ({ status, count })),
+        bookingSource: Object.entries(bookingsBySource).map(([source, count]) => ({ source, count })),
+        paymentMethod: Object.entries(paymentsByMethod).map(([method, count]) => ({ method, count })),
+        paymentStatus: Object.entries(paymentsByStatus).map(([status, count]) => ({ status, count })),
+      },
+      topServices,
+      topSalons,
+      peakHours: Object.entries(peakHours).sort(([a], [b]) => a.localeCompare(b)).map(([hour, count]) => ({ hour, count })),
+      peakDays: Object.entries(peakDays).map(([day, count]) => ({ day, count })),
+    });
+  } catch { res.status(500).json({ error: "Failed to fetch analytics" }); }
+});
+
+adminRouter.get("/bookings/export", async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { format = "csv", status, date_from, date_to, salon_id, payment_status, source } = req.query as Record<string, string>;
+
+    let query = supabase
       .from("bookings")
-      .select(BOOKING_SELECT)
-      .order("created_at", { ascending: false });
+      .select(BOOKING_SELECT);
+
+    if (status) query = query.eq("status", status);
+    if (date_from) query = query.gte("booking_date", date_from);
+    if (date_to) query = query.lte("booking_date", date_to);
+    if (salon_id) query = query.eq("salon_id", salon_id);
+    if (payment_status) query = query.eq("payment_status", payment_status);
+    if (source) query = query.eq("booking_source", source);
+
+    const { data, error } = await query.order("created_at", { ascending: false });
     if (error) { res.status(500).json({ error: error.message }); return; }
 
     const esc = (v: any) => {
@@ -539,37 +805,89 @@ adminRouter.get("/bookings/export", async (_req, res) => {
       return /[,"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
 
-    const headers = "Booking Reference,Customer Name,Customer Phone,Customer Email,Salon,Services,Booking Date,Start Time,End Time,Amount,Discount,Tax,Platform Fee,Total,Payment Status,Booking Status,Created At";
+    const headers = [
+      "Booking Reference", "Customer Name", "Customer Phone", "Customer Email",
+      "Salon Name", "Salon Owner", "Booked Services", "Assigned Staff",
+      "Booking Date", "Start Time", "End Time", "Duration (min)",
+      "Subtotal", "Discount", "Platform Fee", "Tax", "Final Amount",
+      "Payment Method", "Payment Status", "Booking Status",
+      "Booking Source", "Special Request", "Created Date", "Updated Date",
+      "Cancellation Reason", "Notes",
+    ];
+
     const rows = (data ?? []).map((b: any) => [
       esc(b.booking_reference || b.id),
       esc(b.customer_name || b.user?.full_name || ""),
       esc(b.customer_phone || b.user?.phone || ""),
       esc(b.customer_email || b.user?.email || ""),
       esc(b.salon?.name || ""),
-      esc((b.booking_services ?? []).map((s: any) => s.service_name || s.name || "").join("; ")),
+      esc(b.salon?.owner?.full_name || ""),
+      esc((b.booking_services ?? []).map((s: any) => s.service_name).join("; ")),
+      esc(b.staff?.name || ""),
       esc(b.booking_date || ""),
       esc(b.start_time || ""),
       esc(b.end_time || ""),
+      esc(b.total_duration_min || 0),
       esc(b.subtotal ?? 0),
       esc(b.discount_amount ?? 0),
-      esc(b.tax_amount ?? 0),
       esc(b.platform_fee ?? 0),
+      esc(b.tax_amount ?? 0),
       esc(b.total_amount ?? 0),
+      esc(b.payment_method || ""),
       esc(b.payment_status || ""),
       esc(b.status || ""),
+      esc(b.booking_source || "website"),
+      esc(b.special_request || ""),
       esc(b.created_at || ""),
-    ].join(","));
+      esc(b.updated_at || ""),
+      esc(b.cancellation_reason || ""),
+      esc(b.notes || ""),
+    ]);
+
+    if (format === "excel") {
+      const xlsxRows = rows.map(r => `<row>${r.map(c => `<cell><value t="inlineStr"><is><t>${c.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</t></is></value></cell>`).join("")}</row>`).join("");
+      const xml = `<?xml version="1.0" encoding="UTF-8"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Bookings"><Table>${headers.map(h => `<Column ss:Width="120"/>`).join("")}${headers.map((h, i) => `<Row>${i === 0 ? "" : ""}</Row>`).join("")}<Row>${headers.map(h => `<Cell><Data ss:Type="String">${h}</Data></Cell>`).join("")}</Row>${xlsxRows}</Table></Worksheet></Workbook>`;
+      res.setHeader("Content-Type", "application/vnd.ms-excel");
+      res.setHeader("Content-Disposition", `attachment; filename="bookings-export-${new Date().toISOString().slice(0, 10)}.xls"`);
+      res.send(xml);
+      return;
+    }
 
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", `attachment; filename="bookings-export-${new Date().toISOString().slice(0, 10)}.csv"`);
-    res.send([headers, ...rows].join("\r\n"));
+    res.send([headers.join(","), ...rows.map(r => r.join(","))].join("\r\n"));
   } catch { res.status(500).json({ error: "Failed to export bookings" }); }
+});
+
+adminRouter.get("/bookings/diagnostic", async (_req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+
+    const [bookingsSimple, bookingsCount, schemaCheck] = await Promise.all([
+      supabase.from("bookings").select("id, status, created_at").limit(5),
+      supabase.from("bookings").select("id", { count: "exact", head: true }),
+      supabase.from("bookings").select("*, salon:salons!salon_id(id, name)").limit(1),
+    ]);
+
+    res.json({
+      simpleQuery: { data: bookingsSimple.data, error: bookingsSimple.error },
+      countQuery: { count: bookingsCount.count, error: bookingsCount.count },
+      joinQuery: { data: schemaCheck.data, error: schemaCheck.error },
+    });
+  } catch (err) {
+    console.error("[Admin] Diagnostic error:", err);
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 adminRouter.get("/bookings", async (req, res) => {
   try {
     const supabase = getSupabaseServerClient();
-    const { status, search, page = "1", limit = "50" } = req.query as Record<string, string>;
+    const {
+      status, search, page = "1", limit = "50",
+      date_from, date_to, salon_id, payment_status, source,
+      payment_method, customer_email, customer_phone,
+    } = req.query as Record<string, string>;
     const pageNum = Math.max(1, parseInt(page) || 1);
     const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 50));
     const from = (pageNum - 1) * limitNum;
@@ -579,28 +897,78 @@ adminRouter.get("/bookings", async (req, res) => {
       .from("bookings")
       .select(BOOKING_SELECT, { count: "exact" });
 
-    if (status) {
-      query = query.eq("status", status);
-    }
+    if (status) query = query.eq("status", status);
+    if (payment_status) query = query.eq("payment_status", payment_status);
+    if (source) query = query.eq("booking_source", source);
+    if (salon_id) query = query.eq("salon_id", salon_id);
+    if (date_from) query = query.gte("booking_date", date_from);
+    if (date_to) query = query.lte("booking_date", date_to);
+    if (customer_email) query = query.ilike("customer_email", `%${customer_email}%`);
+    if (customer_phone) query = query.ilike("customer_phone", `%${customer_phone}%`);
 
     if (search) {
-      query = query.ilike("booking_reference", `%${search}%`);
+      query = query.or(`booking_reference.ilike.%${search}%,customer_name.ilike.%${search}%,customer_phone.ilike.%${search}%,customer_email.ilike.%${search}%`);
     }
 
     const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
-    if (error) { res.status(500).json({ error: error.message }); return; }
+    if (error) {
+      console.error("[Admin] Bookings query error:", JSON.stringify(error));
+      const fallback = await supabase
+        .from("bookings")
+        .select("*, user:profiles!user_id(full_name, email, phone), salon:salons!salon_id(id, name, slug), booking_services(*), payment:payments(*)")
+        .order("created_at", { ascending: false })
+        .range(from, to);
 
-    res.json(data ?? []);
-  } catch { res.status(500).json({ error: "Failed to fetch bookings" }); }
+      if (fallback.error) {
+        console.error("[Admin] Fallback query also failed:", JSON.stringify(fallback.error));
+        const basic = await supabase.from("bookings").select("*").order("created_at", { ascending: false }).range(from, to);
+        if (basic.error) {
+          console.error("[Admin] Basic query also failed:", JSON.stringify(basic.error));
+          res.status(500).json({ error: basic.error.message || "Failed to fetch bookings" });
+          return;
+        }
+        res.json({
+          bookings: basic.data ?? [],
+          total: basic.data?.length ?? 0,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: 1,
+          warning: "Returned without joins due to query error",
+        });
+        return;
+      }
+
+      res.json({
+        bookings: fallback.data ?? [],
+        total: fallback.data?.length ?? 0,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: 1,
+        warning: "Returned without all joins",
+      });
+      return;
+    }
+
+    res.json({
+      bookings: data ?? [],
+      total: count ?? 0,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil((count ?? 0) / limitNum),
+    });
+  } catch (err) {
+    console.error("[Admin] Bookings catch error:", err);
+    res.status(500).json({ error: "Failed to fetch bookings" });
+  }
 });
 
 adminRouter.put("/bookings/:id/refund", async (req, res) => {
   try {
     const supabase = getSupabaseServerClient();
-    const { refund_amount } = req.body;
+    const { refund_amount, refund_reason } = req.body;
 
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
@@ -610,7 +978,8 @@ adminRouter.put("/bookings/:id/refund", async (req, res) => {
 
     if (bookingError || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
 
-    const payment = booking.payment;
+    const payments = Array.isArray(booking.payment) ? booking.payment : booking.payment ? [booking.payment] : [];
+    const payment = payments[0];
     if (!payment) { res.status(400).json({ error: "No payment found for this booking" }); return; }
 
     const amount = refund_amount ?? payment.amount ?? booking.total_amount;
@@ -620,7 +989,7 @@ adminRouter.put("/bookings/:id/refund", async (req, res) => {
       .update({
         status: "refunded",
         refund_amount: amount,
-        refund_reason: "Admin refund",
+        refund_reason: refund_reason || "Admin refund",
         updated_at: new Date().toISOString(),
       })
       .eq("id", payment.id)
@@ -634,14 +1003,15 @@ adminRouter.put("/bookings/:id/refund", async (req, res) => {
       .update({ payment_status: "refunded", updated_at: new Date().toISOString() })
       .eq("id", req.params.id);
 
-    await supabase.from("notifications").insert({
-      user_id: booking.user_id,
-      title: "Refund Processed",
-      body: `Refund of ₹${amount} has been processed for your booking.`,
-      type: "refund",
-      is_read: false,
-      created_at: new Date().toISOString(),
-    });
+    if (booking.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: booking.user_id,
+        title: "Refund Processed",
+        body: `Refund of ₹${amount} has been processed for your booking ${booking.booking_reference || ""}.`,
+        type: "refund",
+        is_read: false,
+      });
+    }
 
     res.json(updatedPayment);
   } catch { res.status(500).json({ error: "Failed to process refund" }); }
@@ -664,12 +1034,12 @@ adminRouter.put("/bookings/:id/status", async (req, res) => {
 
     const allowedNext = VALID_TRANSITIONS[booking.status] || [];
     if (!allowedNext.includes(status)) {
-      res.status(400).json({ error: `Cannot transition from '${booking.status}' to '${status}'. Allowed transitions: ${allowedNext.join(", ") || "none"}` });
+      res.status(400).json({ error: `Cannot transition from '${booking.status}' to '${status}'. Allowed: ${allowedNext.join(", ") || "none"}` });
       return;
     }
 
     if (status === "cancelled" && !cancellation_reason) {
-      res.status(400).json({ error: "cancellation_reason is required when cancelling a booking" });
+      res.status(400).json({ error: "cancellation_reason is required" });
       return;
     }
 
@@ -678,6 +1048,8 @@ adminRouter.put("/bookings/:id/status", async (req, res) => {
       updateData.cancellation_reason = cancellation_reason;
       updateData.cancelled_at = new Date().toISOString();
     }
+    if (status === "checked_in") updateData.check_in_time = new Date().toISOString();
+    if (status === "completed") updateData.completed_time = new Date().toISOString();
 
     const { data: updated, error: updateError } = await supabase
       .from("bookings")
@@ -688,18 +1060,80 @@ adminRouter.put("/bookings/:id/status", async (req, res) => {
 
     if (updateError) { res.status(500).json({ error: updateError.message }); return; }
 
-    await supabase.from("notifications").insert({
-      user_id: booking.user_id,
-      type: "booking_status_changed",
-      title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-      body: status === "cancelled"
-        ? `Your booking has been cancelled. Reason: ${cancellation_reason}`
-        : `Your booking status has been updated to '${status}'.`,
-      data: { booking_id: req.params.id, status },
-    });
+    if (booking.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: booking.user_id,
+        type: "booking_status_changed",
+        title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        body: status === "cancelled"
+          ? `Your booking has been cancelled. Reason: ${cancellation_reason}`
+          : `Your booking status has been updated to '${status}'.`,
+        data: { booking_id: req.params.id, status },
+      });
+    }
 
     res.json(updated);
   } catch { res.status(500).json({ error: "Failed to update booking status" }); }
+});
+
+adminRouter.put("/bookings/:id/reschedule", async (req, res) => {
+  try {
+    const supabase = getSupabaseServerClient();
+    const { booking_date, start_time, end_time, reason } = req.body;
+
+    if (!booking_date || !start_time || !end_time) {
+      res.status(400).json({ error: "booking_date, start_time, and end_time are required" });
+      return;
+    }
+
+    const { data: booking, error: fetchError } = await supabase
+      .from("bookings")
+      .select("*")
+      .eq("id", req.params.id)
+      .single();
+
+    if (fetchError || !booking) { res.status(404).json({ error: "Booking not found" }); return; }
+    if (booking.status === "cancelled" || booking.status === "completed") {
+      res.status(400).json({ error: `Cannot reschedule a ${booking.status} booking` });
+      return;
+    }
+
+    const { data: overlapping } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("salon_id", booking.salon_id)
+      .eq("booking_date", booking_date)
+      .not("status", "in", "(cancelled,no_show)")
+      .neq("id", req.params.id)
+      .lt("start_time", end_time)
+      .gt("end_time", start_time);
+
+    if (overlapping && overlapping.length > 0) {
+      res.status(409).json({ error: "Selected time slot is already booked" });
+      return;
+    }
+
+    const { data: updated, error: updateError } = await supabase
+      .from("bookings")
+      .update({ booking_date, start_time, end_time, updated_at: new Date().toISOString(), notes: reason ? `${booking.notes ? booking.notes + "\n" : ""}Rescheduled: ${reason}` : booking.notes })
+      .eq("id", req.params.id)
+      .select(BOOKING_SELECT)
+      .single();
+
+    if (updateError) { res.status(500).json({ error: updateError.message }); return; }
+
+    if (booking.user_id) {
+      await supabase.from("notifications").insert({
+        user_id: booking.user_id,
+        type: "booking_rescheduled",
+        title: "Booking Rescheduled",
+        body: `Your booking has been rescheduled to ${booking_date} at ${start_time}.`,
+        data: { booking_id: req.params.id },
+      });
+    }
+
+    res.json(updated);
+  } catch { res.status(500).json({ error: "Failed to reschedule booking" }); }
 });
 
 // ── PAYMENTS ──
@@ -708,28 +1142,34 @@ adminRouter.get("/payments", async (_req, res) => {
     const supabase = getSupabaseServerClient();
     const { data, error } = await supabase
       .from("payments")
-      .select("*, user:profiles(full_name, email), salon:salons(name)")
+      .select("*, user:profiles(full_name, email), booking:bookings(id, salon_id, status, booking_source, salon:salons(name))")
       .order("created_at", { ascending: false });
-    if (error && error.code !== "PGRST116") { res.status(500).json({ error: error.message }); return; }
+    if (error) { res.status(500).json({ error: error.message }); return; }
 
-    const bookings = await supabase.from("bookings").select("id, total_amount, status, created_at, salon:salons(name), user:profiles(full_name, email)").order("created_at", { ascending: false });
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
 
-    const paymentData = data ?? [];
-    const bookingData = (bookings.data ?? []).filter((b: any) => b.status === "confirmed" || b.status === "completed");
+    const allPayments = data ?? [];
+    const isRevenue = (p: any) => {
+      const ps = (p.status || "").toLowerCase();
+      const src = (p.booking?.booking_source || "").toLowerCase();
+      return (src === "website" || src === "glamspot") && (ps === "completed" || ps === "paid");
+    };
 
-    const today = new Date().toISOString().slice(0, 10);
-    const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-    const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
-
-    const dailyRevenue = bookingData.filter((b: any) => b.created_at?.startsWith(today)).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
-    const monthlyRevenue = bookingData.filter((b: any) => b.created_at >= monthStart).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
-    const yearlyRevenue = bookingData.filter((b: any) => b.created_at >= yearStart).reduce((s: number, b: any) => s + (b.total_amount || 0), 0);
+    const revenuePayments = allPayments.filter(isRevenue);
+    const dailyRevenue = revenuePayments.filter((p: any) => p.created_at?.startsWith(today)).reduce((s: number, p: any) => s + (p.amount || 0), 0);
+    const monthlyRevenue = revenuePayments.filter((p: any) => p.created_at >= monthStart).reduce((s: number, p: any) => s + (p.amount || 0), 0);
+    const yearlyRevenue = revenuePayments.filter((p: any) => p.created_at >= yearStart).reduce((s: number, p: any) => s + (p.amount || 0), 0);
 
     res.json({
-      payments: bookingData.map((b: any) => ({
-        id: b.id, transaction_id: b.id.slice(0, 12).toUpperCase(),
-        user: b.user?.full_name, salon: b.salon?.name,
-        amount: b.total_amount, status: b.status, date: b.created_at,
+      payments: allPayments.map((p: any) => ({
+        id: p.id, transaction_id: (p.payment_provider_payment_id || p.id).slice(0, 12).toUpperCase(),
+        user: p.user?.full_name || "Unknown", email: p.user?.email || "",
+        salon: p.booking?.salon?.name || "Unknown", amount: p.amount,
+        status: p.status, method: p.payment_method, date: p.created_at,
+        refund_amount: p.refund_amount || 0,
       })),
       analytics: { dailyRevenue, monthlyRevenue, yearlyRevenue },
     });

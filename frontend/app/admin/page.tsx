@@ -7,7 +7,7 @@ import {
   Shield, Users, Store, FileCheck, TrendingUp,
   Loader2, Star, Calendar, Crown, ArrowUpRight, UserCheck,
   ShoppingBag, MessageSquare, DollarSign, Clock, AlertTriangle,
-  ThumbsUp, ThumbsDown, RefreshCw,
+  ThumbsUp, ThumbsDown, RefreshCw, CreditCard, User,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -17,8 +17,9 @@ interface DashboardData {
     totalSalons: number; claimedSalons: number; unclaimedSalons: number;
     activeOwners: number; pendingClaims: number;
     bookingsToday: number; bookingsThisMonth: number;
-    totalRevenue: number; monthlyRevenue: number;
-    totalReviews: number; averageRating: string;
+    totalRevenue: number; monthlyRevenue: number; yearRevenue?: number; todayRevenue?: number;
+    platformFees?: number; totalReviews: number; averageRating: string;
+    uniqueCustomers?: number; returningCustomers?: number;
   };
   recentBookings: { id: string; salon: string; customer: string; date: string; time: string; status: string; amount: number }[];
   recentReviews: { id: string; salon: string; user: string; rating: number; comment: string; date: string }[];
@@ -27,10 +28,6 @@ interface DashboardData {
   topSalons: { id: string; name: string; slug: string; rating: number; owner: string | null }[];
   mostBookedSalons: { id: string; name: string; slug: string; bookings: number }[];
   lowestRatedSalons: { id: string; name: string; slug: string; rating: number }[];
-}
-
-function AnimatedNumber({ value }: { value: number | string }) {
-  return <span>{value}</span>;
 }
 
 const statusColor: Record<string, { bg: string; text: string }> = {
@@ -83,11 +80,18 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#111827] mb-1">Dashboard</h1>
           <p className="text-sm text-[#6B7280]">Welcome back, {profile?.full_name || "Admin"}.</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/admin/bookings" className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#EC4899] text-white text-[13px] font-semibold hover:bg-[#DB2777] transition-all no-underline">
+            Bookings
+          </Link>
+          <Link href="/admin/analytics" className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#E5E7EB] bg-white text-[13px] font-medium text-[#374151] hover:bg-[#FAFAFB] transition-all no-underline">
+            Analytics
+          </Link>
         </div>
       </div>
 
@@ -97,12 +101,9 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Pending Claims Alert */}
       {data?.stats.pendingClaims ? (
-        <Link
-          href="/admin/claims"
-          className="block mb-6 p-4 bg-gradient-to-r from-[#FFF1F2] to-[#FFE4E6] border border-[#FECDD3] rounded-2xl no-underline hover:shadow-md transition-all"
-        >
+        <Link href="/admin/claims"
+          className="block mb-6 p-4 bg-gradient-to-r from-[#FFF1F2] to-[#FFE4E6] border border-[#FECDD3] rounded-2xl no-underline hover:shadow-md transition-all">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-xl bg-[#FEE2E2] flex items-center justify-center flex-shrink-0">
               <AlertTriangle size={20} className="text-[#EF4444]" />
@@ -124,28 +125,39 @@ export default function AdminPage() {
         </div>
       ) : (
         <>
-          {/* Stat Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {statCards.map((card) => (
-              <Link
-                key={card.label}
-                href={card.href}
-                className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 no-underline hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
-              >
+              <Link key={card.label} href={card.href}
+                className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5 no-underline hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
                 <div className={`w-11 h-11 rounded-xl ${card.bg} flex items-center justify-center mb-3`}>
                   <card.icon size={18} style={{ color: card.color }} />
                 </div>
-                <p className="text-2xl font-bold text-[#111827] mb-0.5">
-                  <AnimatedNumber value={card.value} />
-                </p>
+                <p className="text-2xl font-bold text-[#111827] mb-0.5">{card.value}</p>
                 <p className="text-xs font-medium text-[#6B7280]">{card.label}</p>
               </Link>
             ))}
           </div>
 
-          {/* 3-Column Grid: Claims, Bookings, Reviews */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5 mb-8">
+            {[
+              { label: "Revenue Today", value: `₹${(s?.todayRevenue ?? 0).toLocaleString()}`, icon: DollarSign, color: "#22C55E", bg: "bg-green-50" },
+              { label: "Revenue Month", value: `₹${(s?.monthlyRevenue ?? 0).toLocaleString()}`, icon: TrendingUp, color: "#10B981", bg: "bg-emerald-50" },
+              { label: "Revenue Year", value: `₹${(s?.yearRevenue ?? s?.totalRevenue ?? 0).toLocaleString()}`, icon: Crown, color: "#8B5CF6", bg: "bg-purple-50" },
+              { label: "Platform Earnings", value: `₹${(s?.platformFees ?? 0).toLocaleString()}`, icon: CreditCard, color: "#F59E0B", bg: "bg-amber-50" },
+              { label: "Unique Customers", value: s?.uniqueCustomers ?? s?.totalCustomers ?? 0, icon: User, color: "#3B82F6", bg: "bg-blue-50" },
+              { label: "Repeat Customers", value: s?.returningCustomers ?? 0, icon: Users, color: "#EC4899", bg: "bg-pink-50" },
+            ].map((card) => (
+              <div key={card.label} className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-4">
+                <div className={`w-9 h-9 rounded-xl ${card.bg} flex items-center justify-center mb-2.5`}>
+                  <card.icon size={17} style={{ color: card.color }} />
+                </div>
+                <p className="text-[20px] font-bold text-[#111827]">{card.value}</p>
+                <p className="text-[11px] text-[#6B7280] font-medium">{card.label}</p>
+              </div>
+            ))}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-            {/* Pending Claims */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-[#111827]">Pending Claims</h3>
@@ -168,7 +180,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Recent Bookings */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-[#111827]">Recent Bookings</h3>
@@ -184,11 +195,7 @@ export default function AdminPage() {
                         <p className="text-[13px] font-medium text-[#111827] truncate">{b.customer || "Guest"}</p>
                         <p className="text-[11px] text-[#6B7280]">{b.salon}</p>
                       </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                          statusColor[b.status]?.bg || "bg-gray-100"
-                        } ${statusColor[b.status]?.text || "text-gray-600"}`}
-                      >
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${statusColor[b.status]?.bg || "bg-gray-100"} ${statusColor[b.status]?.text || "text-gray-600"}`}>
                         {b.status.replace(/_/g, " ")}
                       </span>
                     </div>
@@ -197,7 +204,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Recent Reviews */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-[#111827]">Recent Reviews</h3>
@@ -223,9 +229,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* 2-Column: Users + Revenue */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
-            {/* Recent Users */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-sm font-semibold text-[#111827]">Recent Users</h3>
@@ -244,11 +248,7 @@ export default function AdminPage() {
                         <p className="text-[13px] font-medium text-[#111827] truncate">{u.name || "Unknown"}</p>
                         <p className="text-[11px] text-[#6B7280] truncate">{u.email}</p>
                       </div>
-                      <span
-                        className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
-                          u.role === "admin" ? "bg-amber-100 text-amber-800" : u.role === "salon_owner" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${u.role === "admin" ? "bg-amber-100 text-amber-800" : u.role === "salon_owner" ? "bg-green-100 text-green-800" : "bg-blue-100 text-blue-800"}`}>
                         {u.role.replace("_", " ")}
                       </span>
                     </div>
@@ -257,7 +257,6 @@ export default function AdminPage() {
               )}
             </div>
 
-            {/* Revenue Snapshot */}
             <div className="bg-white rounded-2xl border border-[#E5E7EB]/60 p-5">
               <h3 className="text-sm font-semibold text-[#111827] mb-4">Revenue Snapshot</h3>
               <div className="grid grid-cols-2 gap-3">
@@ -279,10 +278,9 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* 3-Column: Top Salons, Most Booked, Lowest Rated */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {[
-              { title: "Top Rated Salons", icon: ThumbsUp, color: "#22C55E", data: data?.topSalons, render: (s: any, i: number) => (
+              { title: "Top Rated Salons", icon: ThumbsUp, color: "#22C55E", data: data?.topSalons, render: (s: any) => (
                 <>
                   <p className="text-[13px] font-medium text-[#111827] truncate">{s.name}</p>
                   <p className="text-[11px] text-[#6B7280]">Owner: {s.owner || "Unassigned"}</p>
@@ -307,7 +305,7 @@ export default function AdminPage() {
                     {section.data.map((s: any, i: number) => (
                       <div key={s.id} className="flex items-center gap-2.5 py-2.5 px-3 rounded-xl hover:bg-[#FAFAFB] transition-colors">
                         <span className="w-7 h-7 rounded-full bg-[#F3F4F6] flex items-center justify-center text-xs font-bold text-[#6B7280] flex-shrink-0">{i + 1}</span>
-                        <div className="flex-1 min-w-0">{section.render(s, i)}</div>
+                        <div className="flex-1 min-w-0">{section.render(s)}</div>
                         {section.value(s)}
                       </div>
                     ))}
