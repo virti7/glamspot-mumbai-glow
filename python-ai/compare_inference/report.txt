@@ -1,0 +1,37 @@
+DIFFERENCE REPORT: Direct Inference vs Pipeline Output
+======================================================================
+Image: 18.jpg
+Aligned face size: 512x512
+
+OVERALL MATCH: 261087/262144 (99.60%)
+DIFFERENCES:   1057/262144 (0.40%)
+
+Boundary radius: 3 px
+Total boundary pixels in direct mask: 24842 (9.5% of image)
+Differences on class boundaries:      1054/1057 (99.7% of diffs)
+Differences in interior regions:      3/1057 (0.3% of diffs)
+
+WARNING: 3 differing pixels are in interior regions (not near any class boundary).
+Per-class difference breakdown:
+
+Class Name                  Direct px    Pipe px    Diff px   On boundary
+----------------------------------------------------------------------
+    0 background                53155      53355         67     67/67   
+    1 skin                      82622      82665        189    189/189  
+    2 l_brow                     1375       1370         11     11/11   
+    3 r_brow                     1291       1283         32     32/32   
+    4 l_eye                       702        695         13     13/13   
+    5 r_eye                       752        752         17     17/17   
+    6 eye_g                         0          0          0           —  
+    7 l_ear                      1792       1859          4      4/4    
+    8 r_ear                       515        514          9      9/9    
+    9 ear_r                         0          0          0           —  
+   10 nose                       6760       6740         42     42/42   
+   11 mouth                         0          0          0           —  
+   12 u_lip                      1526       1527         26     26/26   
+   13 l_lip                      1971       1979         22     22/22   
+   14 neck                       8390       8375         92     92/92   
+   15 neck_l                        0          0          0           —  
+   16 cloth                      3698       3760         22     22/22   
+   17 hair                      97595      97270        511    508/511  
+   18 hat                           0          0          0           —  

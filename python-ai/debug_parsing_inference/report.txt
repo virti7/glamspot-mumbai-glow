@@ -1,0 +1,1 @@
+1. Input image size: 1024x1024 → aligned face: 512x512 → model input: 512×512 → model output: 512x512

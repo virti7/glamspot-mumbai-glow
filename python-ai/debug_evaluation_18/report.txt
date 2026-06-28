@@ -1,0 +1,27 @@
+CHECK 1: GT mask built correctly?
+  PASS: GT shape (1024, 1024), 735560 foreground pixels
+
+CHECK 2: All classes mapped correctly?
+  PASS: All GT classes in range 0-18
+
+CHECK 3: GT aligned with correct transform?
+  PASS: Both (512, 512)
+  PASS: Pred has 208789 fg, GT aligned has 173971 fg
+
+CHECK 4: Interpolation modes correct?
+  PASS: GT loading uses INTER_NEAREST for binary masks
+  PASS: GT warp uses INTER_NEAREST for class indices
+  PASS: Model output resized with INTER_NEAREST
+
+CHECK 5: Background overwriting check?
+  PASS: Background (class 0) is the default — never explicitly set
+
+CHECK 6: Class ID consistency?
+  Classes in both: [1, 2, 3, 4, 5, 8, 10, 17]
+  WARNING: Classes only in GT: [9]
+  WARNING: Classes only in prediction: [7, 12, 13, 14, 16]
+  PASS: Class indices 0-18 map identically in both masks
+
+*** All checks PASSED ***
+  Pixel Accuracy: 39.83%
+  Mean IoU: 4.70%
